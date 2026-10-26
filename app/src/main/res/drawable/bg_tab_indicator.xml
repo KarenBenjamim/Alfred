@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Indicador das abas de temas de Estudos: pílula roxa discreta atrás do texto -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <corners android:radius="@dimen/radius_control" />
+    <solid android:color="#339B7BFF" />
+</shape>

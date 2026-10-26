@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Um alimento: nome, medida, substituições (recolhíveis) e atalho do grupo -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingTop="8dp"
+    android:paddingBottom="2dp">
+
+    <TextView
+        android:id="@+id/food"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/TextAppearance.Alfred.Body"
+        android:textSize="15sp" />
+
+    <TextView
+        android:id="@+id/amount"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/TextAppearance.Alfred.Caption" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <!-- Atalho: abre a lista de substituição do grupo deste alimento -->
+        <com.google.android.material.chip.Chip
+            android:id="@+id/group_chip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:textSize="12sp"
+            app:chipIcon="@drawable/ic_swap"
+            app:chipIconSize="16dp"
+            app:chipMinHeight="28dp"
+            app:ensureMinTouchTargetSize="false" />
+
+        <!-- "Ver 2 substituições" / "Ocultar substituições" -->
+        <TextView
+            android:id="@+id/substitutions_toggle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackground"
+            android:minHeight="32dp"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="4dp"
+            android:textColor="@color/highlight"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/substitutions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:lineSpacingExtra="2dp"
+        android:textAppearance="@style/TextAppearance.Alfred.Caption"
+        android:visibility="gone" />
+</LinearLayout>

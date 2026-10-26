@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Linha mostrada quando um período não tem tarefas -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="20dp"
+    android:paddingVertical="6dp"
+    android:text="@string/tasks_period_empty"
+    android:textAppearance="@style/TextAppearance.Alfred.Caption"
+    android:textStyle="italic" />

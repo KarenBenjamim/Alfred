@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ===================== Tema do Alfred (escuro, Material 3) =====================
+         Os estilos padrão de card, botão, FAB, chip e progresso apontam para os
+         componentes do design system abaixo, então as telas herdam o visual automaticamente. -->
+    <style name="Theme.Alfred" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/highlight</item>
+        <item name="colorOnPrimary">@color/on_highlight</item>
+        <item name="colorPrimaryContainer">@color/gold_container</item>
+        <item name="colorOnPrimaryContainer">@color/highlight</item>
+        <item name="colorSecondary">@color/info</item>
+        <item name="colorOnSecondary">@color/on_accent</item>
+        <item name="colorSecondaryContainer">@color/gold_container</item>
+        <item name="colorOnSecondaryContainer">@color/highlight</item>
+        <item name="colorTertiary">@color/study</item>
+        <item name="colorOnTertiary">@color/on_accent</item>
+        <item name="colorError">@color/error</item>
+        <item name="android:colorBackground">@color/black</item>
+        <item name="colorOnBackground">@color/text_primary</item>
+        <item name="colorSurface">@color/graphite</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="colorSurfaceVariant">@color/graphite_light</item>
+        <item name="colorOnSurfaceVariant">@color/text_secondary</item>
+        <item name="colorSurfaceContainerLowest">@color/black</item>
+        <item name="colorSurfaceContainerLow">@color/graphite</item>
+        <item name="colorSurfaceContainer">@color/graphite_light</item>
+        <item name="colorSurfaceContainerHigh">@color/graphite_light</item>
+        <item name="colorSurfaceContainerHighest">@color/graphite_lighter</item>
+        <item name="colorOutline">@color/outline</item>
+        <item name="colorOutlineVariant">@color/outline</item>
+        <item name="android:windowBackground">@color/black</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:fontFamily">sans-serif</item>
+
+        <!-- Componentes padrão -->
+        <item name="materialCardViewFilledStyle">@style/Widget.Alfred.Card</item>
+        <item name="materialCardViewOutlinedStyle">@style/Widget.Alfred.Card</item>
+        <item name="materialCardViewStyle">@style/Widget.Alfred.Card</item>
+        <item name="materialButtonStyle">@style/Widget.Alfred.Button</item>
+        <item name="materialButtonOutlinedStyle">@style/Widget.Alfred.Button.Secondary</item>
+        <item name="borderlessButtonStyle">@style/Widget.Alfred.Button.Text</item>
+        <item name="floatingActionButtonStyle">@style/Widget.Alfred.FAB</item>
+        <item name="chipStyle">@style/Widget.Alfred.Chip</item>
+        <item name="linearProgressIndicatorStyle">@style/Widget.Alfred.LinearProgress</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.Alfred.Dialog</item>
+        <item name="bottomSheetDialogTheme">@style/ThemeOverlay.Alfred.BottomSheet</item>
+    </style>
+
+    <!-- ===================== Tipografia ===================== -->
+    <style name="TextAppearance.Alfred.Brand" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/highlight</item>
+        <item name="android:textSize">26sp</item>
+    </style>
+
+    <style name="TextAppearance.Alfred.Headline" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">21sp</item>
+    </style>
+
+    <style name="TextAppearance.Alfred.Title" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">16sp</item>
+    </style>
+
+    <!-- Título de seção (antes serifado; agora limpo, como na referência) -->
+    <style name="TextAppearance.Alfred.Section" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">15sp</item>
+    </style>
+
+    <style name="TextAppearance.Alfred.Body" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+
+    <style name="TextAppearance.Alfred.Caption" parent="TextAppearance.Material3.BodySmall">
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:textSize">12sp</item>
+    </style>
+
+    <style name="TextAppearance.Alfred.Label" parent="TextAppearance.Material3.LabelSmall">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:letterSpacing">0.06</item>
+    </style>
+
+    <!-- ===================== Componentes ===================== -->
+
+    <!-- AlfredCard: grafite, cantos de 18dp, borda sutil, sem sombra pesada -->
+    <style name="Widget.Alfred.Card" parent="Widget.Material3.CardView.Filled">
+        <item name="cardBackgroundColor">@color/graphite_light</item>
+        <item name="cardCornerRadius">@dimen/radius_card</item>
+        <item name="cardElevation">0dp</item>
+        <item name="strokeColor">@color/outline</item>
+        <item name="strokeWidth">1dp</item>
+    </style>
+
+    <!-- PrimaryButton: dourado com texto escuro -->
+    <style name="Widget.Alfred.Button" parent="Widget.Material3.Button">
+        <item name="backgroundTint">@color/highlight</item>
+        <item name="android:textColor">@color/on_highlight</item>
+        <item name="iconTint">@color/on_highlight</item>
+        <item name="cornerRadius">@dimen/radius_control</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:textAllCaps">false</item>
+    </style>
+
+    <!-- SecondaryButton: contorno sutil, texto claro -->
+    <style name="Widget.Alfred.Button.Secondary" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="strokeColor">@color/outline</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="iconTint">@color/highlight</item>
+        <item name="cornerRadius">@dimen/radius_control</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:textAllCaps">false</item>
+    </style>
+
+    <style name="Widget.Alfred.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="android:textColor">@color/highlight</item>
+        <item name="iconTint">@color/highlight</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:textAllCaps">false</item>
+    </style>
+
+    <!-- Botão de criação rápida: círculo dourado -->
+    <style name="Widget.Alfred.FAB" parent="Widget.Material3.FloatingActionButton.Primary">
+        <item name="backgroundTint">@color/highlight</item>
+        <item name="tint">@color/on_highlight</item>
+        <item name="shapeAppearanceOverlay">@style/ShapeAppearance.Alfred.Circle</item>
+    </style>
+
+    <style name="ShapeAppearance.Alfred.Circle" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+
+    <!-- Chips: grafite com contorno sutil -->
+    <style name="Widget.Alfred.Chip" parent="Widget.Material3.Chip.Assist">
+        <item name="chipBackgroundColor">@color/graphite_light</item>
+        <item name="chipStrokeColor">@color/outline</item>
+        <item name="chipStrokeWidth">1dp</item>
+        <item name="chipIconTint">@color/highlight</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="chipCornerRadius">@dimen/radius_control</item>
+    </style>
+
+    <!-- ProgressBar linear: trilho grafite, indicador dourado (a cor pode mudar por categoria) -->
+    <style name="Widget.Alfred.LinearProgress" parent="Widget.Material3.LinearProgressIndicator">
+        <item name="trackThickness">6dp</item>
+        <item name="trackCornerRadius">3dp</item>
+        <item name="trackColor">@color/graphite_lighter</item>
+        <item name="indicatorColor">@color/highlight</item>
+        <item name="trackStopIndicatorSize">0dp</item>
+        <item name="indicatorTrackGapSize">0dp</item>
+    </style>
+
+    <!-- Etiqueta pequena (status, categoria, tag); a cor do fundo é trocada pelo código -->
+    <style name="Widget.Alfred.Pill" parent="">
+        <item name="android:background">@drawable/bg_pill</item>
+        <item name="android:paddingStart">8dp</item>
+        <item name="android:paddingEnd">8dp</item>
+        <item name="android:paddingTop">2dp</item>
+        <item name="android:paddingBottom">2dp</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:maxLines">1</item>
+    </style>
+
+    <!-- Abas em formato de "segmentos" (Tarefas | Agenda) -->
+    <style name="Widget.Alfred.Segment" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="backgroundTint">@color/segment_background</item>
+        <item name="android:textColor">@color/segment_text</item>
+        <item name="strokeColor">@color/outline</item>
+        <item name="cornerRadius">@dimen/radius_control</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:minHeight">40dp</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:textAllCaps">false</item>
+    </style>
+
+    <!-- Título de grupo nas configurações -->
+    <style name="Widget.Alfred.SettingsSection" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">20dp</item>
+        <item name="android:layout_marginBottom">8dp</item>
+        <item name="android:layout_marginStart">4dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.Alfred.Label</item>
+        <item name="android:textAllCaps">true</item>
+    </style>
+
+    <!-- Diálogos e painéis com fundo grafite -->
+    <style name="ThemeOverlay.Alfred.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="colorSurface">@color/graphite_light</item>
+        <item name="colorSurfaceContainerHigh">@color/graphite_light</item>
+    </style>
+
+    <style name="ThemeOverlay.Alfred.BottomSheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="colorSurface">@color/graphite</item>
+        <item name="colorSurfaceContainerLow">@color/graphite</item>
+    </style>
+</resources>

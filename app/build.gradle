@@ -1,0 +1,41 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace = 'com.alfred.agenda'
+    compileSdk = 37
+
+    defaultConfig {
+        applicationId = 'com.alfred.agenda'
+        minSdk = 26
+        targetSdk = 37
+        versionCode = 1
+        versionName = '1.0'
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    // Interface (Material Design 3, listas, fragments)
+    implementation 'androidx.appcompat:appcompat:1.8.0'
+    implementation 'com.google.android.material:material:1.14.0'
+    implementation 'androidx.recyclerview:recyclerview:1.4.0'
+    implementation 'androidx.fragment:fragment:1.9.1'
+    implementation 'androidx.core:core:1.19.1'
+
+    // ViewModel + LiveData
+    implementation 'androidx.lifecycle:lifecycle-viewmodel:2.11.0'
+    implementation 'androidx.lifecycle:lifecycle-livedata:2.11.0'
+
+    // Room (SQLite local). Em Java, o annotationProcessor gera o código dos DAOs na compilação.
+    implementation 'androidx.room:room-runtime:2.8.5'
+    annotationProcessor 'androidx.room:room-compiler:2.8.5'
+
+    // Testes unitários das regras puras (cores das tags, progresso do dia, cronômetro...)
+    testImplementation 'junit:junit:4.13.2'
+}

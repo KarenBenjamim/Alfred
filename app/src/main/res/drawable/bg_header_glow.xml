@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Cabeçalho: superfície escura com um brilho dourado discreto no canto superior direito -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient android:angle="270" android:startColor="#FF111318" android:endColor="#FF0B0B0D" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <gradient android:type="radial" android:centerX="0.9" android:centerY="0.0"
+                android:gradientRadius="220dp" android:startColor="#26F2C75C" android:endColor="#00F2C75C" />
+        </shape>
+    </item>
+</layer-list>

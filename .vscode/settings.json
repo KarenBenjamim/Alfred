@@ -1,0 +1,13 @@
+{
+    "java.configuration.updateBuildConfiguration": "interactive",
+    // O Gradle do Android precisa de um JDK completo (com jlink); o Java embutido da extensão não serve
+    "java.import.gradle.java.home": "C:\\Users\\milai\\AppData\\Local\\Java\\jdk-21.0.12.1+1",
+    "java.jdt.ls.java.home": "C:\\Users\\milai\\AppData\\Local\\Java\\jdk-21.0.12.1+1",
+    "java.configuration.runtimes": [
+        {
+            "name": "JavaSE-21",
+            "path": "C:\\Users\\milai\\AppData\\Local\\Java\\jdk-21.0.12.1+1",
+            "default": true
+        }
+    ]
+}

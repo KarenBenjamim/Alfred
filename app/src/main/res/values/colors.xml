@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ===================== Design system do Alfred: cores =====================
+         Base escura, dourado como assinatura, azul e roxo como complementares.
+         Os nomes antigos (black, graphite...) foram mantidos para não quebrar telas. -->
+
+    <!-- Fundos e superfícies -->
+    <color name="black">#FF0B0B0D</color>            <!-- fundo principal -->
+    <color name="graphite">#FF111318</color>         <!-- superfícies secundárias (cabeçalho, barra inferior) -->
+    <color name="graphite_light">#FF1A1A1D</color>   <!-- cards -->
+    <color name="graphite_lighter">#FF24252B</color> <!-- elevado / trilhos de progresso -->
+    <color name="outline">#FF2C2D34</color>          <!-- bordas sutis -->
+
+    <!-- Texto -->
+    <color name="text_primary">#FFF4F1EA</color>
+    <color name="text_secondary">#FFA3A3AA</color>
+
+    <!-- Assinatura (dourado) -->
+    <color name="highlight">#FFF2C75C</color>
+    <color name="on_highlight">#FF1A1404</color>
+    <color name="gold_container">#FF2E2716</color>   <!-- fundo de elementos dourados ativos -->
+
+    <!-- Complementares e semânticas -->
+    <color name="info">#FF65B9FF</color>      <!-- azul tecnológico -->
+    <color name="study">#FF9B7BFF</color>     <!-- roxo: estudos -->
+    <color name="success">#FF72D6A0</color>
+    <color name="error">#FFF16D70</color>
+
+    <!-- Cinza do dia a dia (rótulos, ícones neutros) -->
+    <color name="accent">#FFC9C6BF</color>
+    <color name="on_accent">#FF121316</color>
+
+    <!-- Categorias (resumo do dia, faixas laterais) -->
+    <color name="cat_work">@color/info</color>
+    <color name="cat_study">@color/study</color>
+    <color name="cat_habits">@color/success</color>
+    <color name="cat_personal">@color/highlight</color>
+    <color name="cat_diet">#FFF2A07B</color>
+
+    <!-- Paleta das tags (8 cores). A ordem precisa bater com TagColors.COLORS e R.array.tag_color_names. -->
+    <color name="tag_lavender">#FFB39DDB</color>
+    <color name="tag_pink">#FFF48FB1</color>
+    <color name="tag_coral">#FFFF8A80</color>
+    <color name="tag_orange">#FFFFB74D</color>
+    <color name="tag_mint">#FF80CBC4</color>
+    <color name="tag_green">#FFA5D6A7</color>
+    <color name="tag_blue">#FF90CAF9</color>
+    <color name="tag_gray">#FFB0BEC5</color>
+
+    <!-- Prioridades -->
+    <color name="priority_high">@color/error</color>
+    <color name="priority_medium">@color/info</color>
+    <color name="priority_low">@color/success</color>
+
+    <color name="ic_launcher_background">#FF0B0B0D</color>
+</resources>

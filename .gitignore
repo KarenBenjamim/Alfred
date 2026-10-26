@@ -1,0 +1,12 @@
+.gradle/
+build/
+app/build/
+local.properties
+*.iml
+.idea/
+.kotlin/
+.cxx/
+captures/
+
+# Plano alimentar real (dados pessoais de saúde): fica só no computador
+doc/template/Plano_Alimentar.xlsx

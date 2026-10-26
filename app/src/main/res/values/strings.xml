@@ -1,0 +1,499 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Alfred</string>
+
+    <!-- Abas -->
+    <string name="tab_today">Início</string>
+    <string name="tab_diet">Dieta</string>
+    <string name="tab_habits">Hábitos</string>
+    <string name="tab_study">Estudos</string>
+    <string name="tab_work">Trabalho</string>
+    <string name="tab_personal">Pessoal</string>
+
+    <string name="subtitle_today">Seu guia, sempre ao seu lado.</string>
+    <string name="subtitle_diet">Plano alimentar da nutricionista</string>
+    <string name="subtitle_habits">Pequenos hábitos, grandes resultados</string>
+    <string name="subtitle_study">Um pouco por dia, {voc}.</string>
+    <string name="subtitle_work">Compromissos profissionais</string>
+    <string name="subtitle_personal">Tarefas pessoais</string>
+
+    <!-- Início -->
+    <string name="today_habits">Hábitos da semana</string>
+    <string name="today_habits_all_done">Todos os hábitos de hoje concluídos. Estou quase emocionado, {voc}.</string>
+    <string name="overdue">Atrasada desde %1$s</string>
+
+    <!-- Início (resumo, próximo compromisso, atalhos) -->
+    <string name="home_loading_title">Carregando…</string>
+    <string name="home_loading_msg">Preparando seu dia.</string>
+    <string name="home_summary_title">Resumo do dia</string>
+    <!-- Ex.: "6/10" -->
+    <string name="home_ring_count">%1$d/%2$d</string>
+    <string name="home_ring_percent">%1$d%% concluído</string>
+    <string name="home_ring_empty">Nada para hoje</string>
+    <string name="home_category_count">%1$d/%2$d</string>
+    <string name="home_summary_hint">Conta tarefas com entrega hoje, hábitos, refeições do plano e assuntos estudados hoje.</string>
+    <string name="home_next_add">Criar tarefa</string>
+    <!-- Ex.: "Amanhã · Manhã" -->
+    <string name="home_next_when">%1$s · %2$s</string>
+    <string name="today_label">Hoje</string>
+    <string name="tomorrow_label">Amanhã</string>
+    <string name="cat_work">Trabalho</string>
+    <string name="cat_study">Estudos</string>
+    <string name="cat_habits">Hábitos</string>
+    <string name="cat_personal">Pessoal</string>
+    <string name="cat_diet">Dieta</string>
+
+    <string name="home_next_personal">Próximo compromisso pessoal</string>
+    <string name="home_next_work">Próximo compromisso de trabalho</string>
+    <string name="home_next_personal_empty">Nenhuma tarefa pessoal pendente, {voc}.</string>
+    <string name="home_next_work_empty">Nenhuma tarefa de trabalho pendente, {voc}.</string>
+    <!-- Ex.: "Prioridade Alta" -->
+    <string name="home_priority">Prioridade %1$s</string>
+    <!-- Ex.: "3/5 hoje" -->
+    <string name="home_today_count">%1$d/%2$d hoje</string>
+    <string name="home_habits_none">Nenhum hábito</string>
+    <string name="home_commitments_title">Compromissos do dia</string>
+    <!-- Ex.: "2 de 5 concluídos" (o plural segue o total) -->
+    <plurals name="home_commitments_count">
+        <item quantity="one">%1$d de %2$d concluído</item>
+        <item quantity="other">%1$d de %2$d concluídos</item>
+    </plurals>
+    <string name="home_commitments_free">Agenda livre</string>
+    <string name="home_commitments_none">Nada para hoje</string>
+    <string name="home_commitments_all_done">Todos os compromissos de hoje concluídos. Impecável, {voc}.</string>
+    <!-- Leitor de tela. Ex.: "Trabalho: 2 de 3" -->
+    <string name="home_category_a11y">%1$s: %2$d de %3$d</string>
+
+    <!-- Saudação (o nome já vem com o tratamento: "Senhor Bruno", "Bruno"...) -->
+    <string name="greeting_late">Ainda de pé, %1$s? Os morcegos aprovam.</string>
+    <string name="greeting_morning">Bom dia, %1$s.</string>
+    <string name="greeting_afternoon">Boa tarde, %1$s.</string>
+    <string name="greeting_evening">Boa noite, %1$s.</string>
+
+    <!-- Água -->
+    <string name="water_title">Água de hoje</string>
+    <!-- Ex.: "1.200 ml de 2.450 ml" -->
+    <string name="water_amount">%1$s ml de %2$s ml</string>
+    <string name="water_amount_no_goal">%1$s ml</string>
+    <string name="water_percent">%1$d%% da meta</string>
+    <string name="water_remaining">Faltam %1$s ml para a meta</string>
+    <string name="water_goal_reached">Meta de água atingida, {voc}! Hidratação impecável.</string>
+    <string name="water_no_weight">Informe seu peso no Perfil para calcular a meta.</string>
+    <!-- Ex.: "+200 ml" -->
+    <string name="water_add">+%1$d ml</string>
+    <string name="water_add_a11y">Registrar %1$d ml de água</string>
+    <string name="water_added">+%1$d ml registrados.</string>
+    <string name="water_adjust">Ajustar</string>
+    <string name="water_adjust_title">Água bebida hoje</string>
+    <string name="water_adjust_hint">Total de hoje</string>
+    <string name="water_adjust_invalid">Informe um valor entre 0 e %1$d ml.</string>
+    <string name="unit_ml">ml</string>
+    <string name="unit_kg">kg</string>
+
+    <!-- Login -->
+    <string name="auth_login_subtitle">Às suas ordens. Identifique-se, por favor.</string>
+    <string name="auth_register_subtitle">Uma conta nova, só neste celular.</string>
+    <string name="auth_username">Usuário</string>
+    <string name="auth_password">Senha</string>
+    <string name="auth_password_confirm">Confirmar senha</string>
+    <string name="auth_login">Entrar</string>
+    <string name="auth_register">Criar conta</string>
+    <string name="auth_switch_to_register">Ainda não tem conta? Criar conta</string>
+    <string name="auth_switch_to_login">Já tenho conta. Entrar</string>
+    <string name="auth_local_note">As contas e os dados ficam só neste celular.</string>
+    <string name="auth_username_rule">3 a 30 caracteres: letras, números, ponto, hífen ou _</string>
+    <string name="auth_password_rule">Mínimo de %1$d caracteres</string>
+    <string name="auth_error_required">Campo obrigatório.</string>
+    <string name="auth_error_username">Use de 3 a 30 caracteres: letras, números, ponto, hífen ou _ (sem espaços).</string>
+    <string name="auth_error_password">A senha precisa ter de %1$d a 64 caracteres.</string>
+    <string name="auth_error_mismatch">As senhas não conferem.</string>
+    <string name="auth_error_taken">Este usuário já existe neste celular.</string>
+    <string name="auth_error_wrong">Usuário ou senha incorretos.</string>
+
+    <!-- Primeiro acesso (onboarding) -->
+    <!-- Ex.: "Passo 1 de 4" -->
+    <string name="onboarding_step">Passo %1$d de %2$d</string>
+    <string name="onboarding_name_title">Qual é o seu nome?</string>
+    <string name="onboarding_name_text">Um mordomo precisa saber a quem serve.</string>
+    <string name="onboarding_form_title">Qual forma de tratamento prefere?</string>
+    <string name="onboarding_form_text">O Alfred usará esta forma em todas as mensagens. Dá para mudar depois, no Perfil.</string>
+    <string name="onboarding_weight_title">Qual é o seu peso?</string>
+    <string name="onboarding_weight_text">Usado só para calcular a sua meta diária de água (35 ml por kg).</string>
+    <string name="onboarding_weight_hint">Informe o peso para ver a meta de água.</string>
+    <string name="onboarding_avatar_title">Escolha seu ícone de perfil</string>
+    <string name="onboarding_avatar_text">Ele aparece no canto superior esquerdo e abre o seu Perfil.</string>
+    <string name="onboarding_name_required">Informe o seu nome.</string>
+    <string name="onboarding_back">Voltar</string>
+    <string name="onboarding_next">Próximo</string>
+    <string name="onboarding_finish">Concluir</string>
+    <string name="onboarding_welcome">Tudo pronto, {voc}. Às suas ordens.</string>
+
+    <!-- Perfil -->
+    <string name="profile_title">Seu perfil</string>
+    <!-- Leitor de tela do avatar no cabeçalho. Ex.: "Perfil de Bruno" -->
+    <string name="profile_open">Perfil de %1$s</string>
+    <string name="profile_username">Usuário: %1$s</string>
+    <string name="profile_name">Nome</string>
+    <string name="profile_form">Forma de tratamento</string>
+    <string name="profile_form_value">Tratamento: %1$s</string>
+    <string name="profile_weight">Peso</string>
+    <string name="profile_weight_invalid">Informe um peso entre %1$d e %2$d kg.</string>
+    <!-- Ex.: "Meta de água: 2.450 ml por dia (35 ml por kg)" -->
+    <string name="profile_water_goal">Meta de água: %1$s ml por dia (%2$d ml por kg)</string>
+    <string name="profile_save">Salvar alterações</string>
+    <string name="profile_saved">Perfil atualizado, {voc}.</string>
+    <string name="profile_section_avatar">Ícone de perfil</string>
+    <string name="profile_section_data">Seus dados</string>
+    <string name="profile_section_app">Aplicativo</string>
+    <string name="profile_settings_desc">Notificações, alarmes, dados e ajuda</string>
+    <string name="profile_logout">Sair</string>
+    <string name="profile_logout_title">Sair da conta?</string>
+    <string name="profile_logout_msg">Seus dados continuam guardados neste celular, {voc}. Os lembretes desta conta ficam pausados até a próxima entrada.</string>
+    <!-- A ordem precisa bater com Honorific.FORM_* -->
+    <string-array name="honorific_options">
+        <item>Senhor</item>
+        <item>Senhora</item>
+        <item>Senhorita</item>
+        <item>Pelo nome</item>
+    </string-array>
+    <!-- A ordem precisa bater com Avatars.DRAWABLES -->
+    <string-array name="avatar_names">
+        <item>Gatinho mascarado</item>
+        <item>Gatinha mascarada</item>
+        <item>Cãozinho de capa</item>
+        <item>Cãozinha de capa</item>
+    </string-array>
+
+    <!-- Configurações -->
+    <string name="settings_title">Configurações</string>
+    <string name="settings_section_prefs">Preferências</string>
+    <string name="settings_notifications">Notificações</string>
+    <string name="settings_exact_alarms">Alarmes e lembretes no horário</string>
+    <string name="settings_battery">Economia de bateria</string>
+    <string name="settings_battery_desc">Deixe o Alfred sem restrições para os avisos não sumirem</string>
+    <string name="settings_on">Ativadas</string>
+    <string name="settings_off">Desativadas</string>
+    <string name="settings_allowed">Permitidos</string>
+    <string name="settings_not_allowed">Não permitidos</string>
+    <string name="settings_theme">Tema</string>
+    <string name="settings_theme_value">Escuro (único tema do app)</string>
+    <string name="settings_sync">Sincronização</string>
+    <string name="settings_sync_value">Não disponível · dados locais</string>
+    <string name="settings_section_data">Dados</string>
+    <string name="settings_purge">Expurgo automático</string>
+    <string name="settings_purge_value">Apaga registros com mais de 2 anos ao abrir o app</string>
+    <string name="settings_import_plan">Importar planilha da dieta</string>
+    <string name="settings_import_plan_desc">Substitui o plano alimentar pelo de uma nova planilha (.xlsx)</string>
+    <string name="settings_test_create">Criar tarefas de teste</string>
+    <string name="settings_test_remove">Remover tarefas de teste</string>
+    <string name="settings_section_about">Sobre</string>
+    <string name="settings_about">Sobre o Alfred</string>
+    <string name="settings_about_msg">Alfred %1$s\n\nAgenda pessoal inspirada no mordomo do Batman. As contas são locais: tudo fica salvo neste celular, e cada conta vê só os próprios dados.\n\nPlano alimentar: %2$s.</string>
+    <string name="settings_help">Ajuda</string>
+    <string name="settings_help_msg">• Início (casinha no canto superior direito): resumo do dia, água, próximos compromissos, hábitos e compromissos do dia. Toque nos cards para abrir a aba correspondente.\n\n• Perfil (seu avatar no canto superior esquerdo): nome, forma de tratamento, peso, ícone, configurações e sair.\n\n• Hábitos: registre a água com +200, +300 ou +500 ml; toque nas bolinhas dos dias para marcar os hábitos.\n\n• Trabalho e Pessoal: alterne entre \"Tarefas\" e \"Agenda\". Na agenda, toque em dois dias do calendário para escolher o período.\n\n• Pessoal: as tags coloridas pintam o cartão da tarefa.\n\n• Estudos: inicie o cronômetro de um assunto; o tempo é guardado por dia.\n\n• Dieta: importe a planilha da nutricionista (baixe o template se precisar); toque em \"Grupo X\" num alimento para ver as substituições.</string>
+    <string name="settings_ok">Entendido</string>
+
+    <!-- Hábitos (redesenho) -->
+    <string name="habits_week_title">Esta semana</string>
+    <string name="habits_list_title">Meus hábitos</string>
+    <!-- Ex.: "Hoje: 3 de 5 · Semana: 18 de 30 marcações" -->
+    <string name="habits_week_detail">Hoje: %1$d de %2$d · Semana: %3$d de %4$d marcações. Toque nas bolinhas para marcar.</string>
+    <!-- Ex.: "4/6 dias nesta semana" -->
+    <string name="habit_frequency">%1$d/%2$d dias nesta semana</string>
+    <string name="percent_value">%1$d%%</string>
+    <string name="more_options">Mais opções</string>
+
+    <!-- Tarefas (redesenho) -->
+    <string name="tasks_mode_list">Tarefas</string>
+    <string name="tasks_mode_agenda">Agenda</string>
+    <string name="tasks_overdue_header">Atrasadas</string>
+    <!-- Ex.: "Hoje: 2 de 4 concluídas" -->
+    <string name="tasks_today_progress">Hoje: %1$d de %2$d concluídas</string>
+    <string name="range_today">Hoje</string>
+    <string name="range_next_7">7 dias</string>
+    <string name="range_this_month">Este mês</string>
+    <string name="range_tomorrow_header">Amanhã · %1$s</string>
+
+    <!-- Estudos (redesenho) -->
+    <string name="study_today_label">estudados hoje neste tema</string>
+    <!-- Ex.: "2 de 5 assuntos estudados hoje" -->
+    <string name="study_studied_today">%1$d de %2$d assuntos estudados hoje</string>
+    <string name="study_week_total">Semana: %1$s · Total: %2$s · Toque e segure numa aba para renomear ou excluir.</string>
+    <string name="study_focus_running">Em andamento</string>
+    <string name="study_focus_next">Continuar estudando</string>
+    <!-- Ex.: "Hoje 00:25:13 · Semana 3h 20min" -->
+    <string name="study_focus_detail">Hoje %1$s · Semana %2$s</string>
+    <string name="study_subjects_title">Assuntos</string>
+
+    <!-- Dieta (redesenho) -->
+    <string name="diet_meals_title">Refeições do plano</string>
+    <plurals name="diet_substitutions_toggle">
+        <item quantity="one">Ver %d substituição</item>
+        <item quantity="other">Ver %d substituições</item>
+    </plurals>
+    <string name="diet_substitutions_hide">Ocultar substituições</string>
+
+    <!-- Estados -->
+    <string name="state_error_title">Ops! Algo deu errado.</string>
+    <string name="diet_plan_error">Não foi possível ler o plano salvo neste celular. Importe a planilha novamente.</string>
+    <string name="tasks_empty_title">Nenhuma tarefa encontrada</string>
+    <string name="tasks_empty_range">Você ainda não possui tarefas para este período.</string>
+    <string name="tasks_empty_list">Nenhuma tarefa pendente daqui para frente.</string>
+    <string name="habits_empty_title">Nenhum hábito ainda</string>
+    <string name="study_empty_title">Nada para estudar ainda</string>
+    <string name="diet_empty_title">Nenhuma refeição</string>
+    <string name="create_task">Criar tarefa</string>
+    <string name="create_habit">Criar hábito</string>
+    <string name="create_topic">Criar tema</string>
+    <string name="create_subject">Criar assunto</string>
+
+    <!-- Comum -->
+    <string name="save">Salvar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="delete">Excluir</string>
+    <string name="edit">Editar</string>
+    <string name="add">Adicionar</string>
+    <string name="remove">Remover</string>
+    <string name="pick_time">Escolha o horário</string>
+    <string name="pick_date">Escolha a data</string>
+    <string name="confirm_delete_title">Excluir \"%1$s\"?</string>
+    <string name="confirm_delete_msg">Tem certeza, {voc}? Isto não pode ser desfeito.</string>
+    <string name="required_field">Receio que isto seja obrigatório, {voc}.</string>
+    <string name="time_label">Horário: %1$s</string>
+    <string name="due_label">Entrega: %1$s</string>
+    <string name="done_today">Feito hoje</string>
+
+    <!-- Dieta -->
+    <string name="meal_new">Nova refeição</string>
+    <string name="meal_edit">Editar refeição</string>
+    <string name="meal_name">Nome da refeição</string>
+    <string name="meal_notify">Avisar no horário</string>
+    <string name="meal_items">Itens</string>
+    <string name="meal_add_item">Adicionar item</string>
+    <string name="meal_item_food">Alimento</string>
+    <string name="meal_item_qty">Qtd.</string>
+    <string name="meal_no_items">Nenhum item. Uma refeição um tanto minimalista, {voc}.</string>
+    <string name="diet_empty">Nenhuma refeição cadastrada.\nImporte a planilha da nutricionista ou toque em + para registrar uma refeição.</string>
+
+    <!-- Importação da planilha da dieta -->
+    <string name="diet_import_title">Importe o seu plano alimentar</string>
+    <string name="diet_import_text">{Voc}, envie a planilha Excel (.xlsx) da nutricionista no formato do template do Alfred. Ainda não tem? Baixe o template, preencha e importe aqui.</string>
+    <string name="diet_import_text_existing">{Voc}, suas refeições continuam abaixo. Para ver os grupos de substituição e as orientações, importe a planilha da nutricionista (.xlsx) no formato do template.</string>
+    <string name="diet_import_ask">{Voc}, para montar a sua dieta preciso da planilha da nutricionista (.xlsx), no formato do template do Alfred. Deseja importar agora?</string>
+    <string name="diet_import_button">Importar planilha (.xlsx)</string>
+    <string name="diet_import_again">Importar nova planilha</string>
+    <string name="diet_template_button">Baixar template Excel</string>
+    <string name="diet_template_chip">Template Excel</string>
+    <string name="diet_template_saved">Template salvo em Downloads, {voc}.</string>
+    <string name="diet_template_open">Abrir</string>
+    <string name="diet_template_no_app">Nenhum app de planilhas encontrado para abrir o arquivo.</string>
+    <string name="diet_template_failed">Não consegui salvar o template. Verifique o espaço livre e tente de novo.</string>
+    <string name="diet_no_file_picker">Nenhum seletor de arquivos disponível neste celular.</string>
+    <string name="diet_import_error_title">Planilha fora do formato</string>
+    <string name="diet_import_error_intro">{Voc}, não consegui importar esta planilha. O que precisa ser corrigido:</string>
+    <string name="diet_import_save_failed">Não consegui salvar o plano. Nada foi alterado; tente de novo.</string>
+    <plurals name="diet_imported">
+        <item quantity="one">Plano importado, {voc}: %d refeição.</item>
+        <item quantity="other">Plano importado, {voc}: %d refeições.</item>
+    </plurals>
+    <string name="preview_title">Confira antes de importar</string>
+    <string name="preview_file">Arquivo: %1$s</string>
+    <plurals name="preview_meal_count">
+        <item quantity="one">%d refeição</item>
+        <item quantity="other">%d refeições</item>
+    </plurals>
+    <plurals name="preview_food_count">
+        <item quantity="one">%d alimento</item>
+        <item quantity="other">%d alimentos</item>
+    </plurals>
+    <plurals name="preview_group_count">
+        <item quantity="one">%d grupo de substituição</item>
+        <item quantity="other">%d grupos de substituição</item>
+    </plurals>
+    <!-- Ex.: "08:00 · Café da manhã (4 itens)" -->
+    <string name="preview_meal_line">%1$s · %2$s (%3$s)</string>
+    <plurals name="preview_items">
+        <item quantity="one">%d item</item>
+        <item quantity="other">%d itens</item>
+    </plurals>
+    <plurals name="preview_notes">
+        <item quantity="one">%d orientação</item>
+        <item quantity="other">%d orientações</item>
+    </plurals>
+    <string name="preview_water">Água: %1$d ml por kg</string>
+    <string name="preview_water_default">Água: 35 ml por kg (padrão)</string>
+    <plurals name="preview_examples">
+        <item quantity="one">Atenção: %d linha é igual a um exemplo do template. Os números acima já não a contam; use \"Importar tudo\" se ela fizer parte do seu plano.</item>
+        <item quantity="other">Atenção: %d linhas são iguais aos exemplos do template. Os números acima já não as contam; use \"Importar tudo\" se elas fizerem parte do seu plano.</item>
+    </plurals>
+    <string name="preview_only_examples">Atenção: o plano tem só as linhas de exemplo do template. Substitua-as pelos seus dados antes de importar, ou importe assim mesmo para testar.</string>
+    <string name="preview_replace">As refeições atuais da aba Dieta serão substituídas pelas da planilha, {voc}.</string>
+    <string name="preview_import">Importar</string>
+    <string name="preview_import_clean">Importar sem exemplos</string>
+    <string name="preview_import_all">Importar tudo</string>
+    <string name="group_missing">Importe a planilha da dieta para ver o Grupo %1$d.</string>
+    <string name="later">Depois</string>
+
+    <!-- Plano alimentar e substituições -->
+    <string name="diet_source">Planilha: %1$s · importada em %2$s</string>
+    <string name="diet_groups_title">Grupos de substituição</string>
+    <string name="diet_water">Água</string>
+    <string name="diet_notes">Orientações</string>
+    <!-- Ex.: "Grupo 4 · 2,5 porções" -->
+    <string name="group_chip">Grupo %1$d · %2$s</string>
+    <string name="group_chip_short">%1$d · %2$s</string>
+    <string name="group_title">Grupo %1$d · %2$s</string>
+    <string name="group_subtitle">Cada item abaixo equivale a 1 porção.</string>
+    <string name="group_subtitle_portions">Cada item abaixo equivale a 1 porção. No plano: %1$s, então multiplique a medida, {voc}.</string>
+    <string name="group_search">Buscar alimento</string>
+    <string name="substitution_prefix">ou %1$s</string>
+    <string name="water_result">Meta diária: %1$s ml (%2$s L)\n≈ %3$d copos de 250 ml</string>
+    <string name="water_rule">Regra: %1$s kg × %2$d ml por kg.</string>
+    <string name="water_tips">Dicas da nutri: %1$s</string>
+    <string name="close">Fechar</string>
+
+    <!-- Hábitos -->
+    <string name="habit_new">Novo hábito</string>
+    <string name="habit_edit">Editar hábito</string>
+    <string name="habit_name">Hábito (ex.: Beber 2 litros de água)</string>
+    <string name="habits_empty">Nenhum hábito cadastrado.\nToque em + para começar um, {voc}.</string>
+    <!-- Rótulos das bolinhas, de segunda (índice 0) a domingo -->
+    <string-array name="weekday_short">
+        <item>Seg</item>
+        <item>Ter</item>
+        <item>Qua</item>
+        <item>Qui</item>
+        <item>Sex</item>
+        <item>Sáb</item>
+        <item>Dom</item>
+    </string-array>
+
+    <!-- Tarefas (Trabalho e Pessoal) -->
+    <string name="task_new">Nova tarefa</string>
+    <string name="task_edit">Editar tarefa</string>
+    <string name="task_title">Título</string>
+    <string name="task_description">Descrição</string>
+    <string name="task_priority">Prioridade</string>
+    <string name="task_status">Status</string>
+    <string name="task_period">Período</string>
+    <string name="tasks_period_empty">Livre.</string>
+
+    <!-- Tags (tarefas pessoais) -->
+    <string name="task_tags">Tags</string>
+    <string name="tag_add">Nova tag</string>
+    <string name="tag_new">Nova tag</string>
+    <string name="tag_edit">Editar tag</string>
+    <string name="tag_name">Nome da tag (ex.: Saúde)</string>
+    <string name="tag_color">Cor</string>
+    <string name="tag_hint">Toque para marcar. Toque e segure numa tag para editar ou excluir.</string>
+    <string name="tag_delete_msg">A tag sairá de todas as tarefas, mas as tarefas continuam, {voc}.</string>
+    <!-- A ordem precisa bater com TagColors.COLORS -->
+    <string-array name="tag_color_names">
+        <item>Lavanda</item>
+        <item>Rosa</item>
+        <item>Coral</item>
+        <item>Laranja</item>
+        <item>Menta</item>
+        <item>Verde</item>
+        <item>Azul</item>
+        <item>Cinza</item>
+    </string-array>
+
+    <!-- Estudos -->
+    <string name="study_topic_new">O que deseja aprender?</string>
+    <string name="study_topic_edit">Renomear</string>
+    <string name="study_topic_name">Ex.: Inglês, Python, Violão</string>
+    <string name="study_topic_add">Novo tema de estudo</string>
+    <string name="study_subject_new">Novo assunto</string>
+    <string name="study_subject_edit">Editar assunto</string>
+    <string name="study_subject_name">Assunto (ex.: Verbos irregulares)</string>
+    <string name="study_empty_topics">O que deseja aprender, {voc}?\nToque em + para criar o primeiro tema.</string>
+    <string name="study_empty_subjects">Nenhum assunto neste tema.\nToque em + para adicionar um, {voc}.</string>
+    <string name="study_today">hoje</string>
+    <string name="study_week">Semana: %1$s</string>
+    <string name="study_start">Iniciar</string>
+    <string name="study_pause">Pausar</string>
+    <string name="study_history_title">Histórico · %1$s</string>
+    <string name="study_history_total">Total registrado: %1$s</string>
+    <string name="study_history_empty">Nenhum minuto registrado ainda. O primeiro passo é o mais difícil, {voc}.</string>
+    <string name="study_last_7_days">Últimos 7 dias</string>
+    <string name="study_rename">Renomear</string>
+    <string name="study_notification_title">Estudando: %1$s</string>
+    <string name="study_notification_text">O Alfred está cronometrando. Sem distrações, {voc}.</string>
+    <string name="study_delete_topic_msg">Todos os assuntos e o tempo registrado neste tema serão apagados.</string>
+    <string name="study_delete_subject_msg">O tempo registrado neste assunto também será apagado.</string>
+
+    <!-- Filtro De / Até -->
+    <string name="range_from">De %1$s</string>
+    <string name="range_to">Até %1$s</string>
+    <string name="range_hint_pick_end">Toque no dia final do período, {voc}.</string>
+    <string name="range_today_header">Hoje · %1$s</string>
+    <!-- Ex.: "7 dias · 5 tarefas" -->
+    <string name="range_summary">%1$s · %2$s</string>
+    <plurals name="range_days">
+        <item quantity="one">%d dia</item>
+        <item quantity="other">%d dias</item>
+    </plurals>
+    <plurals name="range_tasks">
+        <item quantity="one">%d tarefa</item>
+        <item quantity="other">%d tarefas</item>
+    </plurals>
+    <string name="month_previous">Mês anterior</string>
+    <string name="month_next">Próximo mês</string>
+
+    <!-- Expurgo e dados de teste -->
+    <plurals name="purge_done">
+        <item quantity="one">Expurgo concluído, {voc}: %d registro com mais de 2 anos foi removido. Ninguém sentirá falta.</item>
+        <item quantity="other">Expurgo concluído, {voc}: %d registros com mais de 2 anos foram removidos. Ninguém sentirá falta.</item>
+    </plurals>
+    <string name="test_created">Tarefas de teste criadas, {voc}. Confira Trabalho, Pessoal e Início.</string>
+    <plurals name="test_removed">
+        <item quantity="one">%d tarefa de teste removida.</item>
+        <item quantity="other">%d tarefas de teste removidas.</item>
+    </plurals>
+
+    <!-- Permissões -->
+    <string name="exact_alarm_title">Uma questão de pontualidade</string>
+    <string name="exact_alarm_msg">{Voc}, para que eu avise exatamente na hora certa, preciso da permissão de \"Alarmes e lembretes\". Sem ela, receio que meus lembretes cheguem com alguns minutos de atraso, algo que um mordomo jamais toleraria.</string>
+    <string name="exact_alarm_open">Abrir configurações</string>
+    <string name="exact_alarm_later">Agora não</string>
+    <string name="notifications_denied">Sem permissão de notificações, receio que meus lembretes sejam silenciosos, {voc}.</string>
+
+    <!-- Canais de notificação -->
+    <string name="channel_diet">Refeições</string>
+    <string name="channel_study">Estudos (cronômetro)</string>
+    <string name="channel_work">Trabalho</string>
+    <string name="channel_personal">Pessoal</string>
+
+    <string-array name="meal_name_suggestions">
+        <item>Café da manhã</item>
+        <item>Lanche da manhã</item>
+        <item>Almoço</item>
+        <item>Lanche da tarde</item>
+        <item>Pré-treino</item>
+        <item>Pós-treino</item>
+        <item>Jantar</item>
+        <item>Ceia</item>
+    </string-array>
+
+    <!-- A ordem precisa bater com Task.PRIORITY_* -->
+    <string-array name="priority_options">
+        <item>Baixa</item>
+        <item>Média</item>
+        <item>Alta</item>
+    </string-array>
+
+    <!-- A ordem precisa bater com Task.STATUS_* -->
+    <string-array name="status_options">
+        <item>Pendente</item>
+        <item>Em andamento</item>
+        <item>Concluída</item>
+    </string-array>
+
+    <!-- A ordem precisa bater com Task.PERIOD_* (Trabalho usa só as duas primeiras) -->
+    <string-array name="period_options">
+        <item>Manhã</item>
+        <item>Tarde</item>
+        <item>Noite</item>
+    </string-array>
+</resources>

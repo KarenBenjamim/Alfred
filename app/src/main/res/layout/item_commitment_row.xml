@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Linha de "Compromissos do dia": categoria + bolinhas (uma por tarefa de hoje).
+     Toque abre a aba da categoria. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:gravity="center_vertical"
+    android:minHeight="@dimen/touch_target"
+    android:orientation="horizontal"
+    android:paddingVertical="6dp">
+
+    <View
+        android:id="@+id/swatch"
+        android:layout_width="4dp"
+        android:layout_height="18dp"
+        android:background="@drawable/bg_pill" />
+
+    <TextView
+        android:id="@+id/label"
+        android:layout_width="84dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:textAppearance="@style/TextAppearance.Alfred.Body" />
+
+    <!-- As bolinhas quebram linha se houver muitas tarefas -->
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/dots"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        app:chipSpacingHorizontal="6dp"
+        app:chipSpacingVertical="6dp" />
+
+    <TextView
+        android:id="@+id/empty"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="@string/home_commitments_none"
+        android:textAppearance="@style/TextAppearance.Alfred.Caption"
+        android:visibility="gone" />
+
+    <ImageView
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        android:importantForAccessibility="no"
+        android:src="@drawable/ic_chevron_right"
+        app:tint="@color/text_secondary" />
+</LinearLayout>

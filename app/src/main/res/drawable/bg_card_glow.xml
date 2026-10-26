@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Card de destaque (resumo do dia): grafite com brilho dourado localizado -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="@dimen/radius_card" />
+            <solid android:color="@color/graphite_light" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="@dimen/radius_card" />
+            <gradient android:type="radial" android:centerX="0.2" android:centerY="0.5"
+                android:gradientRadius="170dp" android:startColor="#1FF2C75C" android:endColor="#00F2C75C" />
+        </shape>
+    </item>
+</layer-list>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Design system do Alfred: espaçamentos e raios -->
+    <dimen name="screen_padding">16dp</dimen>
+
+    <dimen name="radius_card">18dp</dimen>
+    <dimen name="radius_control">12dp</dimen>
+    <dimen name="radius_pill">8dp</dimen>
+
+    <dimen name="touch_target">44dp</dimen>
+
+    <!-- Espaço livre no fim das listas para o botão + não cobrir conteúdo -->
+    <dimen name="list_bottom_space">96dp</dimen>
+    <dimen name="bottom_nav_height">64dp</dimen>
+</resources>
