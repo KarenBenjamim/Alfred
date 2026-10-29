@@ -19,6 +19,7 @@ import com.alfred.agenda.data.entity.StudyLog;
 import com.alfred.agenda.data.entity.StudyModule;
 import com.alfred.agenda.data.entity.StudySubject;
 import com.alfred.agenda.util.DateUtils;
+import com.alfred.agenda.util.StudyColors;
 import com.alfred.agenda.util.StudyStats;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
@@ -74,6 +75,8 @@ public class StudyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     private List<StudySubject> subjects = new ArrayList<>();
     private List<StudyLog> logs = new ArrayList<>();
     private Set<Long> collapsed;
+    /** Cor da matéria (índice em StudyColors), usada nos assuntos ainda não concluídos. */
+    private int topicColor = StudyColors.DEFAULT_INDEX;
 
     public StudyAdapter(Listener listener) {
         this.listener = listener;
@@ -83,9 +86,11 @@ public class StudyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
      * @param modules   módulos do tema, na ordem
      * @param subjects  assuntos do tema (de todos os módulos)
      * @param collapsed ids dos módulos recolhidos
+     * @param topicColor cor da matéria (índice em StudyColors)
      */
     public void setData(List<StudyModule> modules, List<StudySubject> subjects, List<StudyLog> logs,
-                        Set<Long> collapsed) {
+                        Set<Long> collapsed, int topicColor) {
+        this.topicColor = topicColor;
         this.subjects = subjects;
         this.logs = logs;
         this.collapsed = collapsed;
@@ -185,8 +190,8 @@ public class StudyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         h.time.setText(ctx.getString(sum.running ? R.string.study_module_time_running : R.string.study_module_time,
                 DateUtils.formatDuration(sum.secondsTotal), DateUtils.formatDuration(sum.secondsToday)));
         h.time.setTextColor(ContextCompat.getColor(ctx, sum.running ? R.color.study : R.color.text_secondary));
-        int purple = ContextCompat.getColor(ctx, R.color.study);
-        h.card.setStrokeColor(sum.running ? purple : ContextCompat.getColor(ctx, R.color.outline));
+        int gold = ContextCompat.getColor(ctx, R.color.study);
+        h.card.setStrokeColor(sum.running ? gold : ContextCompat.getColor(ctx, R.color.outline));
     }
 
     // ---------------- Assunto ----------------
@@ -204,10 +209,14 @@ public class StudyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         h.name.setContentDescription(s.completed ? ctx.getString(R.string.study_subject_done_a11y, s.name) : s.name);
         bindTimes(h, s);
 
-        // Rodando: cronômetro e borda em roxo (cor de Estudos); o botão é sempre dourado (ação principal)
-        int purple = ContextCompat.getColor(ctx, R.color.study);
-        h.clock.setTextColor(running ? purple : ContextCompat.getColor(ctx, R.color.text_primary));
-        h.card.setStrokeColor(running ? purple : ContextCompat.getColor(ctx, R.color.outline));
+        // A fazer: faixa na cor da matéria; concluído: dourada. Rodando, a borda e o cronômetro
+        // seguem a mesma cor. O botão é sempre dourado (ação principal).
+        int gold = ContextCompat.getColor(ctx, R.color.study);
+        int mark = s.completed ? gold : StudyColors.color(ctx, topicColor);
+        int clock = s.completed ? gold : StudyColors.text(ctx, topicColor);
+        h.stripe.setBackgroundColor(mark);
+        h.clock.setTextColor(running ? clock : ContextCompat.getColor(ctx, R.color.text_primary));
+        h.card.setStrokeColor(running ? mark : ContextCompat.getColor(ctx, R.color.outline));
         h.timer.setIconResource(running ? R.drawable.ic_pause : R.drawable.ic_play);
         h.timer.setContentDescription(ctx.getString(running ? R.string.study_pause : R.string.study_start));
         h.timer.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(ctx, R.color.highlight)));
@@ -262,10 +271,12 @@ public class StudyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         final ImageButton edit;
         final MaterialButton timer;
         final MaterialCardView card;
+        final View stripe;
 
         SubjectHolder(View v) {
             super(v);
             card = v.findViewById(R.id.card);
+            stripe = v.findViewById(R.id.stripe);
             name = v.findViewById(R.id.name);
             clock = v.findViewById(R.id.clock);
             totals = v.findViewById(R.id.totals);

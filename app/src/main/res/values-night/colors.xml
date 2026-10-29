@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ===================== Tema ESCURO (modo noite) =====================
+         Só as cores que mudam em relação ao claro (values/colors.xml); o resto é igual nos dois.
+         Base escura, dourado como assinatura, azul e azul-marinho como complementares. -->
+    <color name="black">#FF0B0B0D</color>
+    <color name="graphite">#FF111318</color>
+    <color name="graphite_light">#FF1A1A1D</color>
+    <color name="graphite_lighter">#FF24252B</color>
+    <color name="outline">#FF2C2D34</color>
+    <color name="text_primary">#FFF4F1EA</color>
+    <color name="text_secondary">#FFA3A3AA</color>
+    <color name="highlight">#FFF2C75C</color>
+    <color name="on_highlight">#FF1A1404</color>
+    <color name="gold_container">#FF2E2716</color>
+    <color name="info">#FF65B9FF</color>
+    <color name="study_pending_text">#FF8BA3CC</color>
+    <color name="success">#FF72D6A0</color>
+    <color name="error">#FFF16D70</color>
+    <color name="accent">#FFC9C6BF</color>
+    <color name="on_accent">#FF121316</color>
+    <color name="cat_diet">#FFF2A07B</color>
+    <color name="tag_lavender">#FFB39DDB</color>
+    <color name="tag_pink">#FFF48FB1</color>
+    <color name="tag_coral">#FFFF8A80</color>
+    <color name="tag_orange">#FFFFB74D</color>
+    <color name="tag_mint">#FF80CBC4</color>
+    <color name="tag_green">#FFA5D6A7</color>
+    <color name="tag_blue">#FF90CAF9</color>
+    <color name="tag_gray">#FFB0BEC5</color>
+
+    <!-- Cabeçalho (degradê) e brilho dourado dos cards de destaque -->
+    <color name="header_top">#FF111318</color>
+    <color name="header_bottom">#FF0B0B0D</color>
+    <color name="glow_header">#26F2C75C</color>
+    <color name="glow_card">#1FF2C75C</color>
+    <color name="study_focus_stroke">#66F2C75C</color>
+    <color name="glow_end">#00F2C75C</color>
+</resources>

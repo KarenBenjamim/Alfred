@@ -1,7 +1,6 @@
 package com.alfred.agenda.ui.tasks;
 
 import android.content.Context;
-import android.graphics.drawable.GradientDrawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
@@ -9,9 +8,9 @@ import android.widget.LinearLayout;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
-import androidx.core.content.ContextCompat;
 
 import com.alfred.agenda.R;
+import com.alfred.agenda.ui.common.ColorDots;
 import com.alfred.agenda.util.Honorific;
 import com.alfred.agenda.data.entity.Tag;
 import com.alfred.agenda.util.TagColors;
@@ -72,34 +71,11 @@ public final class TagDialog {
         });
     }
 
-    /** Desenha as 8 bolinhas; a escolhida ganha um anel claro em volta. */
+    /** Desenha as 8 bolinhas da paleta de tags; a escolhida ganha um anel claro em volta. */
     private static void renderColors(LinearLayout container, int[] selected) {
         Context ctx = container.getContext();
-        container.removeAllViews();
-        String[] names = ctx.getResources().getStringArray(R.array.tag_color_names);
-        float density = ctx.getResources().getDisplayMetrics().density;
-        int size = Math.round(30 * density);
-
-        for (int i = 0; i < TagColors.COLORS.length; i++) {
-            int index = i;
-            View dot = new View(ctx);
-            GradientDrawable d = new GradientDrawable();
-            d.setShape(GradientDrawable.OVAL);
-            d.setColor(TagColors.color(ctx, i));
-            if (i == selected[0]) {
-                d.setStroke(Math.round(3 * density), ContextCompat.getColor(ctx, R.color.text_primary));
-            }
-            dot.setBackground(d);
-            dot.setContentDescription(names[i]);
-            dot.setOnClickListener(v -> {
-                selected[0] = index;
-                renderColors(container, selected);
-            });
-
-            LinearLayout cell = new LinearLayout(ctx);
-            cell.setGravity(android.view.Gravity.CENTER);
-            cell.addView(dot, new LinearLayout.LayoutParams(size, size));
-            container.addView(cell, new LinearLayout.LayoutParams(0, Math.round(40 * density), 1f));
-        }
+        int[] colors = new int[TagColors.COLORS.length];
+        for (int i = 0; i < colors.length; i++) colors[i] = TagColors.color(ctx, i);
+        ColorDots.render(container, colors, ctx.getResources().getStringArray(R.array.tag_color_names), selected);
     }
 }

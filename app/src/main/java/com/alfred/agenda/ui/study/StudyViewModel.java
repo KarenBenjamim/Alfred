@@ -12,6 +12,7 @@ import com.alfred.agenda.data.entity.StudyLog;
 import com.alfred.agenda.data.entity.StudyModule;
 import com.alfred.agenda.data.entity.StudySubject;
 import com.alfred.agenda.data.entity.StudyTopic;
+import com.alfred.agenda.util.StudyColors;
 import com.alfred.agenda.util.StudyStats;
 
 import java.time.ZoneId;
@@ -47,14 +48,17 @@ public class StudyViewModel extends AndroidViewModel {
 
     // ---------------- Temas ----------------
 
-    public void addTopic(String name, Consumer<StudyTopic> onCreated) {
+    public void addTopic(String name, int colorIndex, Consumer<StudyTopic> onCreated) {
         StudyTopic t = new StudyTopic();
         t.name = name;
+        t.colorIndex = StudyColors.safeIndex(colorIndex);
         repo.saveStudyTopic(t, onCreated);
     }
 
-    public void renameTopic(StudyTopic topic, String name) {
+    /** Muda nome e cor da matéria. */
+    public void editTopic(StudyTopic topic, String name, int colorIndex) {
         topic.name = name;
+        topic.colorIndex = StudyColors.safeIndex(colorIndex);
         repo.saveStudyTopic(topic, null);
     }
 
@@ -104,6 +108,13 @@ public class StudyViewModel extends AndroidViewModel {
     /** @param onSuccess chamado só se a gravação deu certo (pode ser null) */
     public void setCompleted(StudySubject subject, boolean completed, @Nullable Runnable onSuccess) {
         repo.setStudySubjectCompleted(subject.id, completed, onSuccess);
+    }
+
+    /** Move o assunto para outro módulo do tema e abre esse módulo, para o assunto aparecer. */
+    public void moveSubject(StudySubject subject, StudyModule target, @Nullable Runnable onSuccess) {
+        if (subject.inModule(target.id) || target.topicId != subject.topicId) return;
+        collapsedModules.remove(target.id);
+        repo.moveStudySubject(subject.id, target.id, onSuccess);
     }
 
     /** Liga/desliga o cronômetro do assunto. */

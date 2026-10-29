@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- ===================== Tema do Alfred (escuro, Material 3) =====================
+    <!-- ===================== Tema do Alfred (claro e escuro, Material 3) =====================
+         As cores vêm de values/colors.xml (claro) e values-night/colors.xml (escuro);
+         qual dos dois vale é escolhido em Configurações > Aparência (ThemePrefs).
          Os estilos padrão de card, botão, FAB, chip e progresso apontam para os
          componentes do design system abaixo, então as telas herdam o visual automaticamente. -->
-    <style name="Theme.Alfred" parent="Theme.Material3.Dark.NoActionBar">
+    <style name="Theme.Alfred" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/highlight</item>
         <item name="colorOnPrimary">@color/on_highlight</item>
         <item name="colorPrimaryContainer">@color/gold_container</item>
@@ -29,7 +31,6 @@
         <item name="colorOutline">@color/outline</item>
         <item name="colorOutlineVariant">@color/outline</item>
         <item name="android:windowBackground">@color/black</item>
-        <item name="android:windowLightStatusBar">false</item>
         <item name="android:fontFamily">sans-serif</item>
 
         <!-- Componentes padrão -->
@@ -197,14 +198,17 @@
         <item name="android:textAllCaps">true</item>
     </style>
 
-    <!-- Diálogos e painéis com fundo grafite -->
+    <!-- Diálogos e painéis em cinza escuro. Sem o "elevation overlay" do Material 3,
+         que misturava a cor primária (dourada) no fundo e deixava os popups amarelados. -->
     <style name="ThemeOverlay.Alfred.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
         <item name="colorSurface">@color/graphite_light</item>
         <item name="colorSurfaceContainerHigh">@color/graphite_light</item>
+        <item name="elevationOverlayEnabled">false</item>
     </style>
 
     <style name="ThemeOverlay.Alfred.BottomSheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
         <item name="colorSurface">@color/graphite</item>
         <item name="colorSurfaceContainerLow">@color/graphite</item>
+        <item name="elevationOverlayEnabled">false</item>
     </style>
 </resources>

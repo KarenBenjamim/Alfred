@@ -46,7 +46,7 @@ import com.alfred.agenda.account.AccountStore;
                 Task.class, Tag.class, TaskTag.class,
                 StudyTopic.class, StudyModule.class, StudySubject.class, StudyLog.class,
                 WaterLog.class},
-        version = 7,
+        version = 8,
         exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 
@@ -177,6 +177,14 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    /** Versão 7 -> 8: cada matéria (tema de estudo) ganhou uma cor; as existentes ficam azul-marinho. */
+    static final Migration MIGRATION_7_8 = new Migration(7, 8) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase db) {
+            db.execSQL("ALTER TABLE `study_topics` ADD COLUMN `colorIndex` INTEGER NOT NULL DEFAULT 0");
+        }
+    };
+
     /** Cadastra os hábitos sugeridos (Habit.SUGGESTIONS). */
     static void insertSuggestedHabits(SupportSQLiteDatabase db) {
         for (int i = 0; i < Habit.SUGGESTIONS.length; i++) {
@@ -209,7 +217,7 @@ public abstract class AppDatabase extends RoomDatabase {
         synchronized (AppDatabase.class) {
             if (instance == null || !name.equals(instanceName)) {
                 instance = Room.databaseBuilder(context.getApplicationContext(), AppDatabase.class, name)
-                        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+                        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
                         .addCallback(SEED_CALLBACK)
                         .build();
                 instanceName = name;

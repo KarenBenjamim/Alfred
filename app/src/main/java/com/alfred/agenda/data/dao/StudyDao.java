@@ -87,6 +87,15 @@ public interface StudyDao {
     @Query("UPDATE study_subjects SET completed = :completed WHERE id = :id")
     void setCompleted(long id, boolean completed);
 
+    /**
+     * Move o assunto para o fim de outro módulo do MESMO tema (o tempo registrado vai junto).
+     * Se o módulo não for do tema do assunto, nada muda. Retorna as linhas alteradas.
+     */
+    @Query("UPDATE study_subjects SET moduleId = :moduleId, "
+            + "position = (SELECT COALESCE(MAX(position), -1) + 1 FROM study_subjects WHERE moduleId = :moduleId) "
+            + "WHERE id = :id AND topicId = (SELECT topicId FROM study_modules WHERE id = :moduleId)")
+    int moveToModule(long id, long moduleId);
+
     // ---- Tempo por dia ----
 
     /** Registros a partir de um dia (para os totais de hoje e da semana). */

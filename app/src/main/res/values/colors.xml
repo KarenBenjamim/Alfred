@@ -1,56 +1,80 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- ===================== Design system do Alfred: cores =====================
-         Base escura, dourado como assinatura, azul e roxo como complementares.
-         Os nomes antigos (black, graphite...) foram mantidos para não quebrar telas. -->
+    <!-- ===================== Design system do Alfred: cores (TEMA CLARO) =====================
+         Fundo creme, cards brancos, dourado (ouro velho, legível sobre o branco) como assinatura.
+         O tema escuro fica em values-night/colors.xml, com os mesmos nomes.
+         Os nomes antigos (black, graphite...) foram mantidos para não quebrar telas:
+         no claro, "black" é o fundo creme e "graphite_light" é o branco dos cards. -->
 
     <!-- Fundos e superfícies -->
-    <color name="black">#FF0B0B0D</color>            <!-- fundo principal -->
-    <color name="graphite">#FF111318</color>         <!-- superfícies secundárias (cabeçalho, barra inferior) -->
-    <color name="graphite_light">#FF1A1A1D</color>   <!-- cards -->
-    <color name="graphite_lighter">#FF24252B</color> <!-- elevado / trilhos de progresso -->
-    <color name="outline">#FF2C2D34</color>          <!-- bordas sutis -->
+    <color name="black">#FFF6F4EF</color>            <!-- fundo principal -->
+    <color name="graphite">#FFFBFAF7</color>         <!-- superfícies secundárias (cabeçalho, barra inferior) -->
+    <color name="graphite_light">#FFFFFFFF</color>   <!-- cards -->
+    <color name="graphite_lighter">#FFE9E6DF</color> <!-- elevado / trilhos de progresso -->
+    <color name="outline">#FFE0DCD3</color>          <!-- bordas sutis -->
 
     <!-- Texto -->
-    <color name="text_primary">#FFF4F1EA</color>
-    <color name="text_secondary">#FFA3A3AA</color>
+    <color name="text_primary">#FF1C1B19</color>
+    <color name="text_secondary">#FF5F5D58</color>
 
     <!-- Assinatura (dourado) -->
-    <color name="highlight">#FFF2C75C</color>
-    <color name="on_highlight">#FF1A1404</color>
-    <color name="gold_container">#FF2E2716</color>   <!-- fundo de elementos dourados ativos -->
+    <color name="highlight">#FF8C6600</color>
+    <color name="on_highlight">#FFFFFFFF</color>
+    <color name="gold_container">#FFF8EFD4</color>   <!-- fundo de elementos dourados ativos -->
 
     <!-- Complementares e semânticas -->
-    <color name="info">#FF65B9FF</color>      <!-- azul tecnológico -->
-    <color name="study">#FF9B7BFF</color>     <!-- roxo: estudos -->
-    <color name="success">#FF72D6A0</color>
-    <color name="error">#FFF16D70</color>
+    <color name="info">#FF1F6FB8</color>      <!-- azul tecnológico -->
+    <color name="study">@color/highlight</color> <!-- Estudos: detalhes em dourado -->
+    <!-- Azul-marinho acinzentado, discreto: assuntos ainda não concluídos (cor padrão da matéria) -->
+    <color name="study_pending">#FF41608F</color>       <!-- faixa e borda -->
+    <color name="study_pending_text">#FF41608F</color>  <!-- cronômetro rodando (contraste 6.8:1) -->
+
+    <!-- Cores que o usuário pode dar a uma matéria (tema de estudo): tons fechados e sóbrios.
+         A ordem precisa bater com StudyColors.COLORS e R.array.study_color_names. -->
+    <color name="study_navy">@color/study_pending</color>
+    <color name="study_petrol">#FF2F6E73</color>
+    <color name="study_moss">#FF4E7A57</color>
+    <color name="study_wine">#FF8A3B4F</color>
+    <color name="study_terracotta">#FFA35F3E</color>
+    <color name="study_plum">#FF6C4C8A</color>
+    <color name="study_rose">#FF9A5A73</color>
+    <color name="study_slate">#FF5B6577</color>
+    <color name="success">#FF237A4B</color>
+    <color name="error">#FFC62F35</color>
 
     <!-- Cinza do dia a dia (rótulos, ícones neutros) -->
-    <color name="accent">#FFC9C6BF</color>
-    <color name="on_accent">#FF121316</color>
+    <color name="accent">#FF75716A</color>
+    <color name="on_accent">#FFFFFFFF</color>
 
     <!-- Categorias (resumo do dia, faixas laterais) -->
     <color name="cat_work">@color/info</color>
-    <color name="cat_study">@color/study</color>
+    <color name="cat_study">@color/study_pending_text</color>
     <color name="cat_habits">@color/success</color>
     <color name="cat_personal">@color/highlight</color>
-    <color name="cat_diet">#FFF2A07B</color>
+    <color name="cat_diet">#FFB4552A</color>
 
     <!-- Paleta das tags (8 cores). A ordem precisa bater com TagColors.COLORS e R.array.tag_color_names. -->
-    <color name="tag_lavender">#FFB39DDB</color>
-    <color name="tag_pink">#FFF48FB1</color>
-    <color name="tag_coral">#FFFF8A80</color>
-    <color name="tag_orange">#FFFFB74D</color>
-    <color name="tag_mint">#FF80CBC4</color>
-    <color name="tag_green">#FFA5D6A7</color>
-    <color name="tag_blue">#FF90CAF9</color>
-    <color name="tag_gray">#FFB0BEC5</color>
+    <color name="tag_lavender">#FF6F4BB0</color>
+    <color name="tag_pink">#FFB0245A</color>
+    <color name="tag_coral">#FFC0392B</color>
+    <color name="tag_orange">#FFA85400</color>
+    <color name="tag_mint">#FF00796B</color>
+    <color name="tag_green">#FF2E7D32</color>
+    <color name="tag_blue">#FF1E6FB8</color>
+    <color name="tag_gray">#FF546E7A</color>
 
     <!-- Prioridades -->
     <color name="priority_high">@color/error</color>
     <color name="priority_medium">@color/info</color>
     <color name="priority_low">@color/success</color>
+
+    <!-- Cabeçalho (degradê) e brilho dourado dos cards de destaque -->
+    <color name="header_top">#FFFBFAF7</color>
+    <color name="header_bottom">#FFF6F4EF</color>
+    <color name="glow_header">#1A8C6600</color>
+    <color name="glow_card">#128C6600</color>
+    <color name="study_focus_stroke">#668C6600</color>
+    <color name="glow_end">#008C6600</color>
 
     <color name="ic_launcher_background">#FF0B0B0D</color>
 </resources>

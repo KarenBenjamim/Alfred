@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Indicador das abas de temas de Estudos: pílula roxa discreta atrás do texto -->
+<!-- Indicador das abas de temas de Estudos: pílula atrás do nome. A cor vem da matéria
+     (StudyFragment pinta com a cor escolhida); o nome fica em branco por cima. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
     <corners android:radius="@dimen/radius_control" />
-    <solid android:color="#339B7BFF" />
+    <solid android:color="@color/study_pending" />
 </shape>

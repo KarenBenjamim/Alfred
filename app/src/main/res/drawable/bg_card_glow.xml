@@ -11,7 +11,7 @@
         <shape android:shape="rectangle">
             <corners android:radius="@dimen/radius_card" />
             <gradient android:type="radial" android:centerX="0.2" android:centerY="0.5"
-                android:gradientRadius="170dp" android:startColor="#1FF2C75C" android:endColor="#00F2C75C" />
+                android:gradientRadius="170dp" android:startColor="@color/glow_card" android:endColor="@color/glow_end" />
         </shape>
     </item>
 </layer-list>

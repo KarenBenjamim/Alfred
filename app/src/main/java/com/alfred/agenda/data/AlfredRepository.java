@@ -470,6 +470,11 @@ public class AlfredRepository {
         runWrite(() -> studyDao.setCompleted(subjectId, completed), onSuccess);
     }
 
+    /** Troca o módulo do assunto (dentro do mesmo tema), mantendo cronômetro e histórico. */
+    public void moveStudySubject(long subjectId, long moduleId, @Nullable Runnable onSuccess) {
+        runWrite(() -> studyDao.moveToModule(subjectId, moduleId), onSuccess);
+    }
+
     public void saveStudySubject(StudySubject subject) {
         io.execute(() -> {
             if (subject.id == 0) {

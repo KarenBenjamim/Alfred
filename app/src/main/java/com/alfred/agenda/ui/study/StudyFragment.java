@@ -23,6 +23,7 @@ import com.alfred.agenda.data.entity.StudyTopic;
 import com.alfred.agenda.util.DateUtils;
 import com.alfred.agenda.util.EmptyState;
 import com.alfred.agenda.util.Honorific;
+import com.alfred.agenda.util.StudyColors;
 import com.alfred.agenda.util.UiUtils;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
@@ -194,13 +195,27 @@ public class StudyFragment extends Fragment {
     // ---------------- Temas (abas) ----------------
 
     private void newTopic() {
-        UiUtils.promptText(requireContext(), R.string.study_topic_new, R.string.study_topic_name, "",
-                name -> viewModel.addTopic(name, created -> {
+        StudyTopicDialog.show(requireContext(), null,
+                (name, color) -> viewModel.addTopic(name, color, created -> {
                     viewModel.selectedTopicId = created.id; // já abre o tema novo
-                    rebuildTabs();
-                    renderSubjects();
-                }), null);
+                    // Se a lista ainda não trouxe o tema novo, o observer de topics recria as abas
+                    // quando ele chegar (recriar agora voltaria para a primeira aba)
+                    for (StudyTopic t : topics) {
+                        if (t.id == created.id) {
+                            rebuildTabs();
+                            return;
+                        }
+                    }
+                }));
     }
+
+    /** Matéria da aba aberta (null se não houver). */
+    @Nullable
+    private StudyTopic selectedTopic() {
+        for (StudyTopic t : topics) if (t.id == viewModel.selectedTopicId) return t;
+        return null;
+    }
+
 
     /** Recria as abas a partir da lista de temas, mantendo a aba selecionada. */
     private void rebuildTabs() {
@@ -213,7 +228,7 @@ public class StudyFragment extends Fragment {
         for (StudyTopic t : topics) {
             TabLayout.Tab tab = tabs.newTab().setText(t.name).setTag(t.id);
             tabs.addTab(tab, t.id == viewModel.selectedTopicId);
-            // Toque e segure: renomear ou excluir o tema
+            // Toque e segure: editar (nome e cor) ou excluir o tema
             tab.view.setOnLongClickListener(v -> {
                 topicMenu(t);
                 return true;
@@ -226,10 +241,11 @@ public class StudyFragment extends Fragment {
     private void topicMenu(StudyTopic topic) {
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(topic.name)
-                .setItems(new CharSequence[]{getString(R.string.study_rename), getString(R.string.delete)}, (d, which) -> {
+                .setItems(new CharSequence[]{getString(R.string.study_topic_menu_edit), getString(R.string.delete)},
+                        (d, which) -> {
                     if (which == 0) {
-                        UiUtils.promptText(requireContext(), R.string.study_topic_edit, R.string.study_topic_name,
-                                topic.name, name -> viewModel.renameTopic(topic, name), null);
+                        StudyTopicDialog.show(requireContext(), topic,
+                                (name, color) -> viewModel.editTopic(topic, name, color));
                     } else {
                         UiUtils.confirmDelete(requireContext(), topic.name, R.string.study_delete_topic_msg,
                                 () -> viewModel.deleteTopic(topic));
@@ -282,20 +298,34 @@ public class StudyFragment extends Fragment {
                 .show();
     }
 
-    /** Menu ⋮ do assunto: marcar/desmarcar como concluído, renomear ou excluir. */
+    /**
+     * Menu ⋮ do assunto: marcar/desmarcar como concluído, mover para outro módulo
+     * (só aparece se o tema tiver outro módulo), renomear ou excluir.
+     */
     private void subjectMenu(StudySubject subject) {
+        List<StudyModule> targets = new ArrayList<>();
+        for (StudyModule m : allModules) {
+            if (m.topicId == subject.topicId && !subject.inModule(m.id)) targets.add(m);
+        }
+        List<CharSequence> items = new ArrayList<>();
+        items.add(getString(subject.completed ? R.string.study_subject_undone : R.string.study_subject_done));
+        if (!targets.isEmpty()) items.add(getString(R.string.study_subject_move));
+        items.add(getString(R.string.study_rename));
+        items.add(getString(R.string.delete));
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(subject.name)
-                .setItems(new CharSequence[]{
-                        getString(subject.completed ? R.string.study_subject_undone : R.string.study_subject_done),
-                        getString(R.string.study_rename), getString(R.string.delete)}, (d, which) -> {
-                    if (which == 0) {
+                .setItems(items.toArray(new CharSequence[0]), (d, which) -> {
+                    // Sem módulo de destino, o item "Mover" não existe e os seguintes sobem uma posição
+                    int action = targets.isEmpty() && which >= 1 ? which + 1 : which;
+                    if (action == 0) {
                         boolean done = !subject.completed;
                         viewModel.setCompleted(subject, done, done ? () -> {
                             if (isAdded()) ((com.alfred.agenda.MainActivity) requireActivity())
                                     .showMessage(Honorific.str(requireContext(), R.string.study_subject_done_msg));
                         } : null);
-                    } else if (which == 1) {
+                    } else if (action == 1) {
+                        moveSubject(subject, targets);
+                    } else if (action == 2) {
                         UiUtils.promptText(requireContext(), R.string.study_subject_edit, R.string.study_subject_name,
                                 subject.name, name -> viewModel.renameSubject(subject, name), null);
                     } else {
@@ -306,11 +336,32 @@ public class StudyFragment extends Fragment {
                 .show();
     }
 
+    /** Escolhe o módulo de destino; o cronômetro, o "concluído" e o histórico vão junto com o assunto. */
+    private void moveSubject(StudySubject subject, List<StudyModule> targets) {
+        CharSequence[] names = new CharSequence[targets.size()];
+        for (int i = 0; i < names.length; i++) names[i] = targets.get(i).name;
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(getString(R.string.study_subject_move_title, subject.name))
+                .setItems(names, (d, which) -> {
+                    StudyModule target = targets.get(which);
+                    viewModel.moveSubject(subject, target, () -> {
+                        if (isAdded()) ((com.alfred.agenda.MainActivity) requireActivity()).showMessage(
+                                Honorific.str(requireContext(), R.string.study_subject_moved_msg, target.name));
+                    });
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
     private void renderSubjects() {
         if (adapter == null) return;
         List<StudyModule> modules = modulesOfSelectedTopic();
         List<StudySubject> shown = subjectsOfSelectedTopic();
-        adapter.setData(modules, shown, logs, viewModel.collapsedModules);
+        StudyTopic topic = selectedTopic();
+        int topicColor = topic == null ? StudyColors.DEFAULT_INDEX : topic.colorIndex;
+        // Destaque do nome da matéria aberta (pílula atrás da aba) na cor escolhida
+        tabs.setSelectedTabIndicatorColor(StudyColors.color(requireContext(), topicColor));
+        adapter.setData(modules, shown, logs, viewModel.collapsedModules, topicColor);
 
         boolean hasModules = !topics.isEmpty() && !modules.isEmpty();
         summaryCard.setVisibility(topics.isEmpty() ? View.GONE : View.VISIBLE);

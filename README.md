@@ -2,7 +2,7 @@
 
 Agenda pessoal para Android inspirada no mordomo do Batman. Tudo fica salvo no próprio celular, sem servidor.
 
-**Login e perfil.** As contas são locais: cada conta tem usuário e senha, e os dados (tarefas, dieta, hábitos, estudos) ficam separados por conta. A senha nunca é gravada, só um hash PBKDF2 com sal. No primeiro acesso de cada conta, o Alfred pergunta nome, forma de tratamento ("Senhor", "Senhora", "Senhorita" ou "Pelo nome"), peso e ícone de perfil. Todas as mensagens usam o tratamento escolhido (ex.: "Bom dia, Senhor Bruno" / "Bom dia, Bruno"). O avatar no canto superior esquerdo abre o **Perfil**, onde se edita tudo isso, ficam as **Configurações** e o botão **Sair**.
+**Login e perfil.** As contas são locais: cada conta tem usuário e senha, e os dados (tarefas, dieta, hábitos, estudos) ficam separados por conta. A senha nunca é gravada, só um hash PBKDF2 com sal. No primeiro acesso de cada conta, o Alfred pergunta nome, forma de tratamento ("Senhor", "Senhora", "Senhorita" ou "Pelo nome"), peso e ícone de perfil. Todas as mensagens usam o tratamento escolhido (ex.: "Bom dia, Senhor Bruno" / "Bom dia, Bruno"). O avatar no canto superior esquerdo abre o **Perfil**, onde se edita tudo isso, ficam as **Configurações** e o botão **Sair**. Em *Configurações → Aparência* dá para escolher o tema **Escuro** (padrão), **Claro** ou **Seguir o sistema**.
 
 **Navegação:** casinha no canto superior direito = **Início**; barra inferior = **Trabalho, Pessoal, Estudos, Hábitos e Dieta**.
 
@@ -188,7 +188,7 @@ app/src/main/res/
 ├── layout/                     # Telas e itens de lista (XML)
 ├── values/strings.xml          # Textos da interface ({voc}/{Voc} = forma de tratamento)
 ├── values/colors.xml           # Paleta (preto, cinza, amarelo nos destaques e as 8 cores das tags)
-├── values/themes.xml           # Tema Material 3 escuro
+├── values/themes.xml           # Tema Material 3 (claro e escuro; cores em values/ e values-night/)
 ├── drawable/                   # Ícones vetoriais
 ├── drawable-nodpi/             # Avatares e arte do Alfred usada dentro do app (cópias reduzidas de doc/img)
 └── mipmap-anydpi/              # Ícone do app (gravata-borboleta, vetores em drawable/ic_launcher_*)

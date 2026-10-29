@@ -175,8 +175,13 @@
     <string name="settings_off">Desativadas</string>
     <string name="settings_allowed">Permitidos</string>
     <string name="settings_not_allowed">Não permitidos</string>
-    <string name="settings_theme">Tema</string>
-    <string name="settings_theme_value">Escuro (único tema do app)</string>
+    <string name="settings_theme">Aparência</string>
+    <!-- Mesma ordem de ThemePrefs (DARK, LIGHT, SYSTEM) -->
+    <string-array name="theme_options">
+        <item>Escuro</item>
+        <item>Claro</item>
+        <item>Seguir o sistema</item>
+    </string-array>
     <string name="settings_sync">Sincronização</string>
     <string name="settings_sync_value">Não disponível · dados locais</string>
     <string name="settings_section_data">Dados</string>
@@ -190,7 +195,7 @@
     <string name="settings_about">Sobre o Alfred</string>
     <string name="settings_about_msg">Alfred %1$s\n\nAgenda pessoal inspirada no mordomo do Batman. As contas são locais: tudo fica salvo neste celular, e cada conta vê só os próprios dados.\n\nPlano alimentar: %2$s.</string>
     <string name="settings_help">Ajuda</string>
-    <string name="settings_help_msg">• Início (casinha no canto superior direito): resumo do dia, água, próximos compromissos, hábitos e compromissos do dia. Toque nos cards para abrir a aba correspondente.\n\n• Perfil (seu avatar no canto superior esquerdo): nome, forma de tratamento, peso, ícone, configurações e sair.\n\n• Hábitos: registre a água com +200, +300 ou +500 ml; toque nas bolinhas dos dias para marcar os hábitos.\n\n• Trabalho e Pessoal: alterne entre \"Tarefas\" e \"Agenda\". Na agenda, toque em dois dias do calendário para escolher o período.\n\n• Pessoal: as tags coloridas pintam o cartão da tarefa.\n\n• Estudos: crie o tema, depois os módulos e, dentro deles, os assuntos. O cronômetro fica no assunto (o tempo é guardado por dia); o módulo soma o tempo dos assuntos e mostra o progresso pelos assuntos marcados como concluídos (menu ⋮ do assunto).\n\n• Dieta: importe a planilha da nutricionista (baixe o template se precisar); toque em \"Grupo X\" num alimento para ver as substituições.</string>
+    <string name="settings_help_msg">• Início (casinha no canto superior direito): resumo do dia, água, próximos compromissos, hábitos e compromissos do dia. Toque nos cards para abrir a aba correspondente.\n\n• Perfil (seu avatar no canto superior esquerdo): nome, forma de tratamento, peso, ícone, configurações e sair.\n\n• Hábitos: registre a água com +200, +300 ou +500 ml; toque nas bolinhas dos dias para marcar os hábitos.\n\n• Trabalho e Pessoal: alterne entre \"Tarefas\" e \"Agenda\". Na agenda, toque em dois dias do calendário para escolher o período.\n\n• Pessoal: as tags coloridas pintam o cartão da tarefa.\n\n• Estudos: crie o tema (com a cor que preferir), depois os módulos e, dentro deles, os assuntos. O cronômetro fica no assunto (o tempo é guardado por dia); o módulo soma o tempo dos assuntos e mostra o progresso pelos assuntos marcados como concluídos (menu ⋮ do assunto).\n\n• Dieta: importe a planilha da nutricionista (baixe o template se precisar); toque em \"Grupo X\" num alimento para ver as substituições.</string>
     <string name="settings_ok">Entendido</string>
 
     <!-- Hábitos (redesenho) -->
@@ -244,6 +249,9 @@
     <string name="study_subject_undone">Desmarcar concluído</string>
     <string name="study_subject_done_msg">Assunto concluído, {voc}. Um passo a mais no módulo.</string>
     <string name="study_subject_done_a11y">%1$s, concluído</string>
+    <string name="study_subject_move">Mover para outro módulo</string>
+    <string name="study_subject_move_title">Mover \"%1$s\" para</string>
+    <string name="study_subject_moved_msg">Assunto movido para %1$s, {voc}.</string>
     <string name="study_delete_module_msg">Todos os assuntos deste módulo e o tempo registrado neles serão apagados.</string>
     <string name="study_empty_modules">Organize o tema em módulos, {voc}.\nDepois, crie os assuntos dentro de cada módulo.</string>
     <string name="create_module">Criar módulo</string>
@@ -423,7 +431,20 @@
 
     <!-- Estudos -->
     <string name="study_topic_new">O que deseja aprender?</string>
-    <string name="study_topic_edit">Renomear</string>
+    <string name="study_topic_edit">Editar matéria</string>
+    <string name="study_topic_color">Cor dos assuntos a estudar</string>
+    <string name="study_topic_menu_edit">Editar nome e cor</string>
+    <!-- Nomes das cores das matérias (mesma ordem de StudyColors.COLORS) -->
+    <string-array name="study_color_names">
+        <item>Azul-marinho</item>
+        <item>Petróleo</item>
+        <item>Verde-musgo</item>
+        <item>Vinho</item>
+        <item>Terracota</item>
+        <item>Ameixa</item>
+        <item>Rosa antigo</item>
+        <item>Ardósia</item>
+    </string-array>
     <string name="study_topic_name">Ex.: Inglês, Python, Violão</string>
     <string name="study_topic_add">Novo tema de estudo</string>
     <string name="study_subject_new">Novo assunto</string>

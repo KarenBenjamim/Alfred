@@ -26,12 +26,13 @@ import com.alfred.agenda.data.AlfredRepository;
 import com.alfred.agenda.data.NutritionPlan;
 import com.alfred.agenda.notifications.AlarmScheduler;
 import com.alfred.agenda.notifications.NotificationHelper;
+import com.alfred.agenda.util.ThemePrefs;
 import com.alfred.agenda.util.UiUtils;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 /**
  * Configurações (abertas pelo Perfil). Só mostra o que existe de verdade no app:
- * permissões do sistema, tema (escuro, o único), dados, sobre e ajuda.
+ * permissões do sistema, aparência (escuro, claro ou sistema), dados, sobre e ajuda.
  * As contas são locais e não há sincronização — isso aparece como informação, sem botão falso.
  */
 public class SettingsFragment extends Fragment {
@@ -107,10 +108,23 @@ public class SettingsFragment extends Fragment {
         addRow(prefs, R.drawable.ic_battery, getString(R.string.settings_battery),
                 getString(R.string.settings_battery_desc), () ->
                         startActivity(new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)));
+        String[] themes = getResources().getStringArray(R.array.theme_options);
         addRow(prefs, R.drawable.ic_palette, getString(R.string.settings_theme),
-                getString(R.string.settings_theme_value), null);
+                themes[ThemePrefs.get(requireContext())], this::chooseTheme);
         addRow(prefs, R.drawable.ic_sync, getString(R.string.settings_sync),
                 getString(R.string.settings_sync_value), null);
+    }
+
+    /** Escuro, claro ou seguir o sistema; a tela é recriada com o tema escolhido. */
+    private void chooseTheme() {
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.settings_theme)
+                .setSingleChoiceItems(R.array.theme_options, ThemePrefs.get(requireContext()), (d, which) -> {
+                    d.dismiss();
+                    ThemePrefs.set(requireContext(), which);
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
     }
 
     private void showAbout() {

@@ -1,6 +1,7 @@
 package com.alfred.agenda.data.entity;
 
 import androidx.annotation.NonNull;
+import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
@@ -16,4 +17,8 @@ public class StudyTopic {
 
     /** Ordem das abas. */
     public int position;
+
+    /** Cor da matéria (índice em StudyColors): pinta os assuntos ainda não concluídos. 0 = azul-marinho. */
+    @ColumnInfo(defaultValue = "0")
+    public int colorIndex;
 }

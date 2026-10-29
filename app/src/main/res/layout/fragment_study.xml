@@ -39,7 +39,7 @@
                     app:tabIndicatorGravity="stretch"
                     app:tabMode="scrollable"
                     app:tabRippleColor="@null"
-                    app:tabSelectedTextColor="@color/text_primary"
+                    app:tabSelectedTextColor="@android:color/white"
                     app:tabTextColor="@color/text_secondary" />
 
                 <ImageButton
@@ -131,7 +131,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="@dimen/screen_padding"
                 android:layout_marginTop="8dp"
-                app:strokeColor="#669B7BFF">
+                app:strokeColor="@color/study_focus_stroke">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -144,7 +144,7 @@
                         android:layout_width="44dp"
                         android:layout_height="44dp"
                         android:background="@drawable/bg_icon_tile"
-                        android:backgroundTint="#339B7BFF">
+                        android:backgroundTint="@color/gold_container">
 
                         <ImageView
                             android:layout_width="22dp"
