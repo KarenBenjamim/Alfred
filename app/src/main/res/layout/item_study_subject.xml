@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Assunto de estudo: faixa roxa, nome, tempo de hoje, semana, menu e iniciar/pausar -->
+<!-- Assunto de estudo (dentro de um módulo, com recuo): faixa roxa, nome (com check se concluído),
+     tempo de hoje, semana, menu e iniciar/pausar. O tempo é cronometrado aqui. -->
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/card"
     style="?attr/materialCardViewFilledStyle"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_marginStart="18dp"
     android:layout_marginVertical="4dp">
 
     <LinearLayout
@@ -31,7 +33,9 @@
                 android:id="@+id/name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:drawablePadding="6dp"
                 android:fontFamily="sans-serif-medium"
+                android:gravity="center_vertical"
                 android:textAppearance="@style/TextAppearance.Alfred.Body"
                 android:textSize="15sp" />
 

@@ -21,6 +21,7 @@ import com.alfred.agenda.data.entity.Task;
 import com.alfred.agenda.data.entity.Habit;
 import com.alfred.agenda.data.entity.HabitLog;
 import com.alfred.agenda.data.entity.StudyLog;
+import com.alfred.agenda.data.entity.StudyModule;
 import com.alfred.agenda.data.entity.StudySubject;
 import com.alfred.agenda.data.entity.StudyTopic;
 import com.alfred.agenda.data.entity.Tag;
@@ -406,6 +407,10 @@ public class AlfredRepository {
         return studyDao.observeTopics();
     }
 
+    public LiveData<List<StudyModule>> observeStudyModules() {
+        return studyDao.observeModules();
+    }
+
     public LiveData<List<StudySubject>> observeStudySubjects() {
         return studyDao.observeSubjects();
     }
@@ -439,15 +444,44 @@ public class AlfredRepository {
         });
     }
 
+    /** Cria ou renomeia um módulo. onSaved recebe o módulo já com id (na thread principal). */
+    public void saveStudyModule(StudyModule module, @Nullable Consumer<StudyModule> onSaved) {
+        io.execute(() -> {
+            if (module.id == 0) {
+                module.position = studyDao.nextModulePosition(module.topicId);
+                module.id = studyDao.insertModule(module);
+            } else {
+                studyDao.updateModule(module);
+            }
+            if (onSaved != null) main.post(() -> onSaved.accept(module));
+        });
+    }
+
+    /** Exclui o módulo com os assuntos e o tempo registrado neles. */
+    public void deleteStudyModule(StudyModule module) {
+        io.execute(() -> {
+            studyDao.deleteModule(module);
+            updateStudyNotificationSync();
+        });
+    }
+
+    /** Marca/desmarca o assunto como concluído. @param onSuccess só se a gravação deu certo */
+    public void setStudySubjectCompleted(long subjectId, boolean completed, @Nullable Runnable onSuccess) {
+        runWrite(() -> studyDao.setCompleted(subjectId, completed), onSuccess);
+    }
+
     public void saveStudySubject(StudySubject subject) {
         io.execute(() -> {
             if (subject.id == 0) {
-                subject.position = studyDao.nextSubjectPosition(subject.topicId);
+                subject.position = subject.moduleId == null ? 0 : studyDao.nextSubjectPosition(subject.moduleId);
                 subject.id = studyDao.insertSubject(subject);
             } else {
-                // Renomear não pode apagar um cronômetro que esteja rodando
+                // Renomear não pode apagar um cronômetro rodando nem desmarcar "concluído"
                 StudySubject current = studyDao.getSubject(subject.id);
-                if (current != null) subject.runningSince = current.runningSince;
+                if (current != null) {
+                    subject.runningSince = current.runningSince;
+                    subject.completed = current.completed;
+                }
                 studyDao.updateSubject(subject);
             }
             updateStudyNotificationSync();

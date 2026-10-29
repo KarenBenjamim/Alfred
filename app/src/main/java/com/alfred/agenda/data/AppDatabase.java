@@ -20,6 +20,7 @@ import com.alfred.agenda.data.dao.WaterDao;
 import com.alfred.agenda.data.entity.Habit;
 import com.alfred.agenda.data.entity.HabitLog;
 import com.alfred.agenda.data.entity.StudyLog;
+import com.alfred.agenda.data.entity.StudyModule;
 import com.alfred.agenda.data.entity.StudySubject;
 import com.alfred.agenda.data.entity.StudyTopic;
 import com.alfred.agenda.data.entity.Tag;
@@ -43,9 +44,9 @@ import com.alfred.agenda.account.AccountStore;
         entities = {Meal.class, MealItem.class, MealLog.class,
                 Habit.class, HabitLog.class,
                 Task.class, Tag.class, TaskTag.class,
-                StudyTopic.class, StudySubject.class, StudyLog.class,
+                StudyTopic.class, StudyModule.class, StudySubject.class, StudyLog.class,
                 WaterLog.class},
-        version = 6,
+        version = 7,
         exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 
@@ -150,6 +151,32 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    /**
+     * Versão 6 -> 7: Estudos ganhou módulos (Tema -> Módulo -> Assunto) e o assunto ganhou
+     * "concluído". Os assuntos que já existiam vão para um módulo "Geral" do próprio tema.
+     *
+     * As colunas entram com ALTER TABLE (sem recriar study_subjects): recriar a tabela
+     * apagaria, por CASCADE, todo o tempo registrado em study_logs.
+     */
+    static final Migration MIGRATION_6_7 = new Migration(6, 7) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase db) {
+            db.execSQL("CREATE TABLE IF NOT EXISTS `study_modules` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "
+                    + "`topicId` INTEGER NOT NULL, `name` TEXT NOT NULL, `position` INTEGER NOT NULL, "
+                    + "FOREIGN KEY(`topicId`) REFERENCES `study_topics`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )");
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_study_modules_topicId` ON `study_modules` (`topicId`)");
+            db.execSQL("ALTER TABLE `study_subjects` ADD COLUMN `moduleId` INTEGER "
+                    + "REFERENCES `study_modules`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE");
+            db.execSQL("ALTER TABLE `study_subjects` ADD COLUMN `completed` INTEGER NOT NULL DEFAULT 0");
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_study_subjects_moduleId` ON `study_subjects` (`moduleId`)");
+            // Um módulo "Geral" por tema que já tinha assuntos, e os assuntos vão para ele
+            db.execSQL("INSERT INTO `study_modules` (`topicId`, `name`, `position`) "
+                    + "SELECT DISTINCT `topicId`, 'Geral', 0 FROM `study_subjects`");
+            db.execSQL("UPDATE `study_subjects` SET `moduleId` = (SELECT m.`id` FROM `study_modules` m "
+                    + "WHERE m.`topicId` = `study_subjects`.`topicId`)");
+        }
+    };
+
     /** Cadastra os hábitos sugeridos (Habit.SUGGESTIONS). */
     static void insertSuggestedHabits(SupportSQLiteDatabase db) {
         for (int i = 0; i < Habit.SUGGESTIONS.length; i++) {
@@ -182,7 +209,7 @@ public abstract class AppDatabase extends RoomDatabase {
         synchronized (AppDatabase.class) {
             if (instance == null || !name.equals(instanceName)) {
                 instance = Room.databaseBuilder(context.getApplicationContext(), AppDatabase.class, name)
-                        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+                        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
                         .addCallback(SEED_CALLBACK)
                         .build();
                 instanceName = name;

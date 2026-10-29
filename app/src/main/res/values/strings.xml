@@ -190,7 +190,7 @@
     <string name="settings_about">Sobre o Alfred</string>
     <string name="settings_about_msg">Alfred %1$s\n\nAgenda pessoal inspirada no mordomo do Batman. As contas são locais: tudo fica salvo neste celular, e cada conta vê só os próprios dados.\n\nPlano alimentar: %2$s.</string>
     <string name="settings_help">Ajuda</string>
-    <string name="settings_help_msg">• Início (casinha no canto superior direito): resumo do dia, água, próximos compromissos, hábitos e compromissos do dia. Toque nos cards para abrir a aba correspondente.\n\n• Perfil (seu avatar no canto superior esquerdo): nome, forma de tratamento, peso, ícone, configurações e sair.\n\n• Hábitos: registre a água com +200, +300 ou +500 ml; toque nas bolinhas dos dias para marcar os hábitos.\n\n• Trabalho e Pessoal: alterne entre \"Tarefas\" e \"Agenda\". Na agenda, toque em dois dias do calendário para escolher o período.\n\n• Pessoal: as tags coloridas pintam o cartão da tarefa.\n\n• Estudos: inicie o cronômetro de um assunto; o tempo é guardado por dia.\n\n• Dieta: importe a planilha da nutricionista (baixe o template se precisar); toque em \"Grupo X\" num alimento para ver as substituições.</string>
+    <string name="settings_help_msg">• Início (casinha no canto superior direito): resumo do dia, água, próximos compromissos, hábitos e compromissos do dia. Toque nos cards para abrir a aba correspondente.\n\n• Perfil (seu avatar no canto superior esquerdo): nome, forma de tratamento, peso, ícone, configurações e sair.\n\n• Hábitos: registre a água com +200, +300 ou +500 ml; toque nas bolinhas dos dias para marcar os hábitos.\n\n• Trabalho e Pessoal: alterne entre \"Tarefas\" e \"Agenda\". Na agenda, toque em dois dias do calendário para escolher o período.\n\n• Pessoal: as tags coloridas pintam o cartão da tarefa.\n\n• Estudos: crie o tema, depois os módulos e, dentro deles, os assuntos. O cronômetro fica no assunto (o tempo é guardado por dia); o módulo soma o tempo dos assuntos e mostra o progresso pelos assuntos marcados como concluídos (menu ⋮ do assunto).\n\n• Dieta: importe a planilha da nutricionista (baixe o template se precisar); toque em \"Grupo X\" num alimento para ver as substituições.</string>
     <string name="settings_ok">Entendido</string>
 
     <!-- Hábitos (redesenho) -->
@@ -223,7 +223,30 @@
     <string name="study_focus_next">Continuar estudando</string>
     <!-- Ex.: "Hoje 00:25:13 · Semana 3h 20min" -->
     <string name="study_focus_detail">Hoje %1$s · Semana %2$s</string>
-    <string name="study_subjects_title">Assuntos</string>
+    <string name="study_modules_title">Módulos</string>
+    <string name="study_module_new">Novo módulo</string>
+    <string name="study_module_edit">Renomear módulo</string>
+    <string name="study_module_name">Módulo (ex.: Gramática)</string>
+    <string name="study_subject_add">Assunto</string>
+    <string name="study_module_empty">Nenhum assunto neste módulo ainda.</string>
+    <!-- Leitor de tela do cabeçalho do módulo -->
+    <string name="study_module_expand">Abrir o módulo %1$s</string>
+    <string name="study_module_collapse">Recolher o módulo %1$s</string>
+    <!-- Progresso do módulo. Ex.: "3 de 5 assuntos concluídos" (o plural segue o total) -->
+    <plurals name="study_module_completed">
+        <item quantity="one">%1$d de %2$d assunto concluído</item>
+        <item quantity="other">%1$d de %2$d assuntos concluídos</item>
+    </plurals>
+    <!-- Soma do tempo dos assuntos do módulo. Ex.: "Total 3h 20min · Hoje 25min" -->
+    <string name="study_module_time">Total %1$s · Hoje %2$s</string>
+    <string name="study_module_time_running">Total %1$s · Hoje %2$s · em andamento</string>
+    <string name="study_subject_done">Marcar como concluído</string>
+    <string name="study_subject_undone">Desmarcar concluído</string>
+    <string name="study_subject_done_msg">Assunto concluído, {voc}. Um passo a mais no módulo.</string>
+    <string name="study_subject_done_a11y">%1$s, concluído</string>
+    <string name="study_delete_module_msg">Todos os assuntos deste módulo e o tempo registrado neles serão apagados.</string>
+    <string name="study_empty_modules">Organize o tema em módulos, {voc}.\nDepois, crie os assuntos dentro de cada módulo.</string>
+    <string name="create_module">Criar módulo</string>
 
     <!-- Dieta (redesenho) -->
     <string name="diet_meals_title">Refeições do plano</string>
@@ -245,7 +268,6 @@
     <string name="create_task">Criar tarefa</string>
     <string name="create_habit">Criar hábito</string>
     <string name="create_topic">Criar tema</string>
-    <string name="create_subject">Criar assunto</string>
 
     <!-- Comum -->
     <string name="save">Salvar</string>
@@ -408,7 +430,6 @@
     <string name="study_subject_edit">Editar assunto</string>
     <string name="study_subject_name">Assunto (ex.: Verbos irregulares)</string>
     <string name="study_empty_topics">O que deseja aprender, {voc}?\nToque em + para criar o primeiro tema.</string>
-    <string name="study_empty_subjects">Nenhum assunto neste tema.\nToque em + para adicionar um, {voc}.</string>
     <string name="study_today">hoje</string>
     <string name="study_week">Semana: %1$s</string>
     <string name="study_start">Iniciar</string>
@@ -420,7 +441,7 @@
     <string name="study_rename">Renomear</string>
     <string name="study_notification_title">Estudando: %1$s</string>
     <string name="study_notification_text">O Alfred está cronometrando. Sem distrações, {voc}.</string>
-    <string name="study_delete_topic_msg">Todos os assuntos e o tempo registrado neste tema serão apagados.</string>
+    <string name="study_delete_topic_msg">Todos os módulos, assuntos e o tempo registrado neste tema serão apagados.</string>
     <string name="study_delete_subject_msg">O tempo registrado neste assunto também será apagado.</string>
 
     <!-- Filtro De / Até -->

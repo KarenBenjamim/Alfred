@@ -17,10 +17,12 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.alfred.agenda.R;
 import com.alfred.agenda.data.entity.StudyLog;
+import com.alfred.agenda.data.entity.StudyModule;
 import com.alfred.agenda.data.entity.StudySubject;
 import com.alfred.agenda.data.entity.StudyTopic;
 import com.alfred.agenda.util.DateUtils;
 import com.alfred.agenda.util.EmptyState;
+import com.alfred.agenda.util.Honorific;
 import com.alfred.agenda.util.UiUtils;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
@@ -31,11 +33,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Aba "Estudos".
+ * Aba "Estudos": Tema -> Módulo -> Assunto.
  *  - No topo, uma aba por tema ("Inglês", "Python"...). O + ao lado cria um tema;
  *    toque e segure numa aba para renomear ou excluir.
- *  - Embaixo, os assuntos do tema, cada um com cronômetro (iniciar/pausar).
- *    O tempo vai sendo guardado por dia; toque no assunto para ver o histórico.
+ *  - Embaixo, os módulos do tema. Cada módulo mostra o progresso (assuntos concluídos) e a
+ *    soma do tempo dos seus assuntos; toque no cabeçalho para recolher/abrir.
+ *  - Dentro de cada módulo, os assuntos, cada um com cronômetro (iniciar/pausar). O tempo é
+ *    guardado por dia no assunto; toque no assunto para ver o histórico.
  */
 public class StudyFragment extends Fragment {
 
@@ -52,10 +56,11 @@ public class StudyFragment extends Fragment {
     private TextView focusName;
     private TextView focusDetail;
     private MaterialButton focusButton;
-    private View subjectsTitle;
-    private SubjectAdapter adapter;
+    private View modulesTitle;
+    private StudyAdapter adapter;
 
     private List<StudyTopic> topics = new ArrayList<>();
+    private List<StudyModule> allModules = new ArrayList<>();
     private List<StudySubject> allSubjects = new ArrayList<>();
     private List<StudyLog> logs = new ArrayList<>();
     /** Evita tratar como "toque" as seleções feitas pelo próprio código ao recriar as abas. */
@@ -96,21 +101,34 @@ public class StudyFragment extends Fragment {
         focusName = view.findViewById(R.id.focus_name);
         focusDetail = view.findViewById(R.id.focus_detail);
         focusButton = view.findViewById(R.id.focus_button);
-        subjectsTitle = view.findViewById(R.id.subjects_title);
+        modulesTitle = view.findViewById(R.id.subjects_title);
         RecyclerView list = view.findViewById(R.id.list);
 
-        adapter = new SubjectAdapter(new SubjectAdapter.Listener() {
+        adapter = new StudyAdapter(new StudyAdapter.Listener() {
             @Override
-            public void onToggle(StudySubject subject) {
+            public void onToggleModule(StudyModule module) {
+                if (!viewModel.collapsedModules.remove(module.id)) viewModel.collapsedModules.add(module.id);
+                renderSubjects();
+            }
+
+            @Override
+            public void onModuleMenu(StudyModule module) {
+                moduleMenu(module);
+            }
+
+            @Override
+            public void onAddSubject(StudyModule module) {
+                newSubject(module);
+            }
+
+            @Override
+            public void onToggleTimer(StudySubject subject) {
                 viewModel.toggleTimer(subject);
             }
 
             @Override
-            public void onEdit(StudySubject subject) {
-                UiUtils.promptText(requireContext(), R.string.study_subject_edit, R.string.study_subject_name,
-                        subject.name, name -> viewModel.renameSubject(subject, name),
-                        () -> UiUtils.confirmDelete(requireContext(), subject.name,
-                                R.string.study_delete_subject_msg, () -> viewModel.deleteSubject(subject)));
+            public void onSubjectMenu(StudySubject subject) {
+                subjectMenu(subject);
             }
 
             @Override
@@ -140,12 +158,16 @@ public class StudyFragment extends Fragment {
         view.findViewById(R.id.button_add_topic).setOnClickListener(v -> newTopic());
         view.findViewById(R.id.fab).setOnClickListener(v -> {
             if (topics.isEmpty()) newTopic();
-            else newSubject();
+            else newModule();
         });
 
         viewModel.topics.observe(getViewLifecycleOwner(), items -> {
             topics = items;
             rebuildTabs();
+        });
+        viewModel.modules.observe(getViewLifecycleOwner(), items -> {
+            allModules = items;
+            renderSubjects();
         });
         viewModel.subjects.observe(getViewLifecycleOwner(), items -> {
             allSubjects = items;
@@ -216,7 +238,13 @@ public class StudyFragment extends Fragment {
                 .show();
     }
 
-    // ---------------- Assuntos ----------------
+    // ---------------- Módulos e assuntos ----------------
+
+    private List<StudyModule> modulesOfSelectedTopic() {
+        List<StudyModule> list = new ArrayList<>();
+        for (StudyModule m : allModules) if (m.topicId == viewModel.selectedTopicId) list.add(m);
+        return list;
+    }
 
     private List<StudySubject> subjectsOfSelectedTopic() {
         List<StudySubject> list = new ArrayList<>();
@@ -224,25 +252,75 @@ public class StudyFragment extends Fragment {
         return list;
     }
 
-    private void newSubject() {
+    private void newModule() {
+        if (viewModel.selectedTopicId == 0) return;
+        UiUtils.promptText(requireContext(), R.string.study_module_new, R.string.study_module_name, "",
+                name -> viewModel.addModule(viewModel.selectedTopicId, name), null);
+    }
+
+    private void newSubject(StudyModule module) {
         UiUtils.promptText(requireContext(), R.string.study_subject_new, R.string.study_subject_name, "",
-                name -> viewModel.addSubject(viewModel.selectedTopicId, name), null);
+                name -> viewModel.addSubject(module, name), null);
+    }
+
+    /** Menu ⋮ do módulo: novo assunto, renomear ou excluir (com os assuntos e o tempo). */
+    private void moduleMenu(StudyModule module) {
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(module.name)
+                .setItems(new CharSequence[]{getString(R.string.study_subject_new), getString(R.string.study_rename),
+                        getString(R.string.delete)}, (d, which) -> {
+                    if (which == 0) {
+                        newSubject(module);
+                    } else if (which == 1) {
+                        UiUtils.promptText(requireContext(), R.string.study_module_edit, R.string.study_module_name,
+                                module.name, name -> viewModel.renameModule(module, name), null);
+                    } else {
+                        UiUtils.confirmDelete(requireContext(), module.name, R.string.study_delete_module_msg,
+                                () -> viewModel.deleteModule(module));
+                    }
+                })
+                .show();
+    }
+
+    /** Menu ⋮ do assunto: marcar/desmarcar como concluído, renomear ou excluir. */
+    private void subjectMenu(StudySubject subject) {
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(subject.name)
+                .setItems(new CharSequence[]{
+                        getString(subject.completed ? R.string.study_subject_undone : R.string.study_subject_done),
+                        getString(R.string.study_rename), getString(R.string.delete)}, (d, which) -> {
+                    if (which == 0) {
+                        boolean done = !subject.completed;
+                        viewModel.setCompleted(subject, done, done ? () -> {
+                            if (isAdded()) ((com.alfred.agenda.MainActivity) requireActivity())
+                                    .showMessage(Honorific.str(requireContext(), R.string.study_subject_done_msg));
+                        } : null);
+                    } else if (which == 1) {
+                        UiUtils.promptText(requireContext(), R.string.study_subject_edit, R.string.study_subject_name,
+                                subject.name, name -> viewModel.renameSubject(subject, name), null);
+                    } else {
+                        UiUtils.confirmDelete(requireContext(), subject.name, R.string.study_delete_subject_msg,
+                                () -> viewModel.deleteSubject(subject));
+                    }
+                })
+                .show();
     }
 
     private void renderSubjects() {
         if (adapter == null) return;
+        List<StudyModule> modules = modulesOfSelectedTopic();
         List<StudySubject> shown = subjectsOfSelectedTopic();
-        adapter.setData(shown, logs);
+        adapter.setData(modules, shown, logs, viewModel.collapsedModules);
 
-        boolean hasSubjects = !topics.isEmpty() && !shown.isEmpty();
+        boolean hasModules = !topics.isEmpty() && !modules.isEmpty();
         summaryCard.setVisibility(topics.isEmpty() ? View.GONE : View.VISIBLE);
-        subjectsTitle.setVisibility(hasSubjects ? View.VISIBLE : View.GONE);
+        modulesTitle.setVisibility(hasModules ? View.VISIBLE : View.GONE);
         if (topics.isEmpty()) {
             EmptyState.show(emptyState, R.drawable.ic_study, R.string.study_empty_title,
                     R.string.study_empty_topics, R.string.create_topic, this::newTopic);
-        } else if (shown.isEmpty()) {
+        } else if (modules.isEmpty()) {
             EmptyState.show(emptyState, R.drawable.ic_study, R.string.study_empty_title,
-                    R.string.study_empty_subjects, R.string.create_subject, this::newSubject);
+                    R.string.study_empty_modules, R.string.create_module, this::newModule);
         } else {
             EmptyState.hide(emptyState);
         }

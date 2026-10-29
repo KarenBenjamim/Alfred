@@ -8,7 +8,6 @@ import androidx.annotation.StringRes;
 import com.alfred.agenda.R;
 import com.alfred.agenda.account.UserProfile;
 
-import java.util.Locale;
 
 /**
  * Forma de tratamento escolhida no perfil ("Senhor", "Senhora", "Senhorita" ou "Pelo nome").
@@ -90,7 +89,7 @@ public final class Honorific {
 
     private static String capitalize(String s) {
         if (s.isEmpty()) return s;
-        return s.substring(0, 1).toUpperCase(new Locale("pt", "BR")) + s.substring(1);
+        return s.substring(0, 1).toUpperCase(DateUtils.PT_BR) + s.substring(1);
     }
 
     // ===================== Atalhos com o perfil atual =====================

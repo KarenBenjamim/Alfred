@@ -9,6 +9,7 @@ import androidx.room.Query;
 import androidx.room.Update;
 
 import com.alfred.agenda.data.entity.StudyLog;
+import com.alfred.agenda.data.entity.StudyModule;
 import com.alfred.agenda.data.entity.StudySubject;
 import com.alfred.agenda.data.entity.StudyTopic;
 
@@ -34,6 +35,23 @@ public interface StudyDao {
     @Delete
     void deleteTopic(StudyTopic topic);
 
+    // ---- Módulos (dentro de um tema) ----
+
+    @Query("SELECT * FROM study_modules ORDER BY position, id")
+    LiveData<List<StudyModule>> observeModules();
+
+    @Query("SELECT COALESCE(MAX(position), -1) + 1 FROM study_modules WHERE topicId = :topicId")
+    int nextModulePosition(long topicId);
+
+    @Insert
+    long insertModule(StudyModule module);
+
+    @Update
+    void updateModule(StudyModule module);
+
+    @Delete
+    void deleteModule(StudyModule module);
+
     // ---- Assuntos ----
 
     @Query("SELECT * FROM study_subjects ORDER BY position, id")
@@ -51,8 +69,8 @@ public interface StudyDao {
     @Query("SELECT * FROM study_logs WHERE epochDay = :epochDay")
     List<StudyLog> getLogsForDaySync(long epochDay);
 
-    @Query("SELECT COALESCE(MAX(position), -1) + 1 FROM study_subjects WHERE topicId = :topicId")
-    int nextSubjectPosition(long topicId);
+    @Query("SELECT COALESCE(MAX(position), -1) + 1 FROM study_subjects WHERE moduleId = :moduleId")
+    int nextSubjectPosition(long moduleId);
 
     @Insert
     long insertSubject(StudySubject subject);
@@ -65,6 +83,9 @@ public interface StudyDao {
 
     @Query("UPDATE study_subjects SET runningSince = :since WHERE id = :id")
     void setRunningSince(long id, long since);
+
+    @Query("UPDATE study_subjects SET completed = :completed WHERE id = :id")
+    void setCompleted(long id, boolean completed);
 
     // ---- Tempo por dia ----
 
