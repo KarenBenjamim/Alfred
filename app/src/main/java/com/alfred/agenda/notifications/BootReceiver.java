@@ -6,6 +6,7 @@ import android.content.Intent;
 
 import com.alfred.agenda.account.AccountStore;
 import com.alfred.agenda.data.AlfredRepository;
+import com.alfred.agenda.util.AppLog;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -37,6 +38,9 @@ public class BootReceiver extends BroadcastReceiver {
             try {
                 AlfredRepository.get(app).rescheduleAllSync();
                 AlfredRepository.get(app).refreshStudyNotification();
+            } catch (RuntimeException e) {
+                // Ex.: banco indisponível. Sem tela aberta, um erro aqui derrubaria o app à toa
+                AppLog.e("Falha ao reagendar após reiniciar", e);
             } finally {
                 result.finish();
             }

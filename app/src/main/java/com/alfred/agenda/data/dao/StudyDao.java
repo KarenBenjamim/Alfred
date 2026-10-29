@@ -6,7 +6,6 @@ import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
-import androidx.room.Update;
 
 import com.alfred.agenda.data.entity.StudyLog;
 import com.alfred.agenda.data.entity.StudyModule;
@@ -29,9 +28,6 @@ public interface StudyDao {
     @Insert
     long insertTopic(StudyTopic topic);
 
-    @Update
-    void updateTopic(StudyTopic topic);
-
     @Delete
     void deleteTopic(StudyTopic topic);
 
@@ -45,9 +41,6 @@ public interface StudyDao {
 
     @Insert
     long insertModule(StudyModule module);
-
-    @Update
-    void updateModule(StudyModule module);
 
     @Delete
     void deleteModule(StudyModule module);
@@ -75,9 +68,6 @@ public interface StudyDao {
     @Insert
     long insertSubject(StudySubject subject);
 
-    @Update
-    void updateSubject(StudySubject subject);
-
     @Delete
     void deleteSubject(StudySubject subject);
 
@@ -86,6 +76,18 @@ public interface StudyDao {
 
     @Query("UPDATE study_subjects SET completed = :completed WHERE id = :id")
     void setCompleted(long id, boolean completed);
+
+    // Renomear muda SÓ o nome (e a cor da matéria): módulo, posição, cronômetro e "concluído"
+    // ficam como estão no banco, mesmo que a tela tenha uma cópia desatualizada
+
+    @Query("UPDATE study_topics SET name = :name, colorIndex = :colorIndex WHERE id = :id")
+    void editTopic(long id, String name, int colorIndex);
+
+    @Query("UPDATE study_modules SET name = :name WHERE id = :id")
+    void renameModule(long id, String name);
+
+    @Query("UPDATE study_subjects SET name = :name WHERE id = :id")
+    void renameSubject(long id, String name);
 
     /**
      * Move o assunto para o fim de outro módulo do MESMO tema (o tempo registrado vai junto).

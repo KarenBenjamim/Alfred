@@ -2,6 +2,7 @@ package com.alfred.agenda.notifications;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -83,7 +84,11 @@ public final class NotificationHelper {
                 .setSilent(true)
                 .setCategory(NotificationCompat.CATEGORY_STOPWATCH)
                 .setContentIntent(contentIntent)
-                .addAction(0, context.getString(R.string.study_pause), stopIntent);
+                .addAction(0, context.getString(R.string.study_pause), stopIntent)
+                // Tela bloqueada: sem o nome do assunto
+                .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+                .setPublicVersion(publicVersion(context, CHANNEL_STUDY,
+                        context.getString(R.string.study_notification_public)));
 
         NotificationManagerCompat.from(context).notify(STUDY_NOTIFICATION_ID, builder.build());
     }
@@ -122,8 +127,22 @@ public final class NotificationHelper {
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setCategory(NotificationCompat.CATEGORY_REMINDER)
                 .setAutoCancel(true)
-                .setContentIntent(contentIntent);
+                .setContentIntent(contentIntent)
+                // Tela bloqueada: sem título da tarefa nem nome da refeição
+                .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+                .setPublicVersion(publicVersion(context, channel,
+                        context.getString(R.string.notification_public_text)));
 
         NotificationManagerCompat.from(context).notify(notificationId, builder.build());
+    }
+
+    /** Versão genérica mostrada com a tela bloqueada (nenhum dado pessoal). */
+    private static Notification publicVersion(Context context, String channel, String text) {
+        return new NotificationCompat.Builder(context, channel)
+                .setSmallIcon(R.drawable.ic_stat_alfred)
+                .setColor(ContextCompat.getColor(context, R.color.highlight))
+                .setContentTitle(context.getString(R.string.app_name))
+                .setContentText(text)
+                .build();
     }
 }

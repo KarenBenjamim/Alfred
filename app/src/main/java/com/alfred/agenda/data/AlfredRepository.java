@@ -29,6 +29,7 @@ import com.alfred.agenda.data.entity.TaskTag;
 import com.alfred.agenda.data.entity.WaterLog;
 import com.alfred.agenda.notifications.AlarmScheduler;
 import com.alfred.agenda.notifications.NotificationHelper;
+import com.alfred.agenda.util.AppLog;
 import com.alfred.agenda.util.DateUtils;
 import com.alfred.agenda.util.DayProgress;
 import com.alfred.agenda.util.MealGroups;
@@ -44,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
@@ -130,7 +132,7 @@ public class AlfredRepository {
 
     /** Cria ou atualiza a refeição e substitui todos os itens dela. */
     public void saveMeal(Meal meal, List<MealItem> items) {
-        io.execute(() -> {
+        runIo(() -> {
             db.runInTransaction(() -> {
                 if (meal.id == 0) meal.id = mealDao.insert(meal);
                 else mealDao.update(meal);
@@ -148,7 +150,7 @@ public class AlfredRepository {
     }
 
     public void deleteMeal(Meal meal) {
-        io.execute(() -> {
+        runIo(() -> {
             mealDao.delete(meal);
             scheduler.cancel(AlarmScheduler.TYPE_MEAL, meal.id);
         });
@@ -164,7 +166,7 @@ public class AlfredRepository {
      * @param onError   roda na thread principal se algo falhou
      */
     public void importPlan(NutritionPlan plan, Runnable onSuccess, Runnable onError) {
-        io.execute(() -> {
+        runIo(() -> {
             try {
                 NutritionPlan.save(app, plan);
                 for (Meal old : mealDao.getAllSync()) scheduler.cancel(AlarmScheduler.TYPE_MEAL, old.id);
@@ -175,7 +177,7 @@ public class AlfredRepository {
                 });
                 for (Meal m : saved) scheduler.scheduleMeal(m);
             } catch (IOException | RuntimeException e) {
-                android.util.Log.e("Alfred", "Falha ao importar o plano", e);
+                AppLog.e("Falha ao importar o plano", e);
                 main.post(onError);
                 return;
             }
@@ -239,7 +241,7 @@ public class AlfredRepository {
     }
 
     public void saveHabit(Habit habit) {
-        io.execute(() -> {
+        runIo(() -> {
             if (habit.id == 0) {
                 habit.position = habitDao.nextPosition();
                 habit.id = habitDao.insert(habit);
@@ -250,7 +252,7 @@ public class AlfredRepository {
     }
 
     public void deleteHabit(Habit habit) {
-        io.execute(() -> habitDao.delete(habit));
+        runIo(() -> habitDao.delete(habit));
     }
 
     public void setHabitDone(long habitId, long epochDay, boolean done) {
@@ -321,7 +323,7 @@ public class AlfredRepository {
     }
 
     public void saveTask(Task task) {
-        io.execute(() -> {
+        runIo(() -> {
             if (task.id == 0) task.id = taskDao.insert(task);
             else taskDao.update(task);
             scheduler.scheduleTask(task);
@@ -352,7 +354,7 @@ public class AlfredRepository {
             saveTask(task);
             return;
         }
-        io.execute(() -> {
+        runIo(() -> {
             db.runInTransaction(() -> {
                 if (task.id == 0) task.id = taskDao.insert(task);
                 else taskDao.update(task);
@@ -371,7 +373,7 @@ public class AlfredRepository {
     }
 
     public void deleteTask(Task task) {
-        io.execute(() -> {
+        runIo(() -> {
             taskDao.delete(task);
             scheduler.cancel(AlarmScheduler.TYPE_TASK, task.id);
         });
@@ -389,7 +391,7 @@ public class AlfredRepository {
 
     /** Cria ou atualiza a tag. onSaved recebe a tag já com id (na thread principal). */
     public void saveTag(Tag tag, @Nullable Consumer<Tag> onSaved) {
-        io.execute(() -> {
+        runIo(() -> {
             if (tag.id == 0) tag.id = tagDao.insert(tag);
             else tagDao.update(tag);
             if (onSaved != null) main.post(() -> onSaved.accept(tag));
@@ -398,7 +400,7 @@ public class AlfredRepository {
 
     /** Exclui a tag (ela some de todas as tarefas; as tarefas continuam). */
     public void deleteTag(Tag tag) {
-        io.execute(() -> tagDao.delete(tag));
+        runIo(() -> tagDao.delete(tag));
     }
 
     // ===================== Estudos =====================
@@ -423,43 +425,35 @@ public class AlfredRepository {
         return studyDao.observeLogsForSubject(subjectId);
     }
 
-    /** Cria ou renomeia um tema. onSaved recebe o tema já com id (na thread principal). */
+    /** Cria um tema. onSaved recebe o tema já com id (na thread principal). */
     public void saveStudyTopic(StudyTopic topic, @Nullable Consumer<StudyTopic> onSaved) {
-        io.execute(() -> {
-            if (topic.id == 0) {
-                topic.position = studyDao.nextTopicPosition();
-                topic.id = studyDao.insertTopic(topic);
-            } else {
-                studyDao.updateTopic(topic);
-            }
+        runIo(() -> {
+            topic.position = studyDao.nextTopicPosition();
+            topic.id = studyDao.insertTopic(topic);
             if (onSaved != null) main.post(() -> onSaved.accept(topic));
         });
     }
 
     /** Exclui o tema com todos os assuntos e o tempo registrado. */
     public void deleteStudyTopic(StudyTopic topic) {
-        io.execute(() -> {
+        runIo(() -> {
             studyDao.deleteTopic(topic);
             updateStudyNotificationSync();
         });
     }
 
-    /** Cria ou renomeia um módulo. onSaved recebe o módulo já com id (na thread principal). */
+    /** Cria um módulo. onSaved recebe o módulo já com id (na thread principal). */
     public void saveStudyModule(StudyModule module, @Nullable Consumer<StudyModule> onSaved) {
-        io.execute(() -> {
-            if (module.id == 0) {
-                module.position = studyDao.nextModulePosition(module.topicId);
-                module.id = studyDao.insertModule(module);
-            } else {
-                studyDao.updateModule(module);
-            }
+        runIo(() -> {
+            module.position = studyDao.nextModulePosition(module.topicId);
+            module.id = studyDao.insertModule(module);
             if (onSaved != null) main.post(() -> onSaved.accept(module));
         });
     }
 
     /** Exclui o módulo com os assuntos e o tempo registrado neles. */
     public void deleteStudyModule(StudyModule module) {
-        io.execute(() -> {
+        runIo(() -> {
             studyDao.deleteModule(module);
             updateStudyNotificationSync();
         });
@@ -470,31 +464,38 @@ public class AlfredRepository {
         runWrite(() -> studyDao.setCompleted(subjectId, completed), onSuccess);
     }
 
+    /** Muda nome e cor da matéria (só esses campos). */
+    public void editStudyTopic(long topicId, String name, int colorIndex) {
+        runWrite(() -> studyDao.editTopic(topicId, name, colorIndex), null);
+    }
+
+    public void renameStudyModule(long moduleId, String name) {
+        runWrite(() -> studyDao.renameModule(moduleId, name), null);
+    }
+
+    /** Renomeia o assunto; a notificação do cronômetro (se for ele que está rodando) acompanha. */
+    public void renameStudySubject(long subjectId, String name) {
+        runWrite(() -> {
+            studyDao.renameSubject(subjectId, name);
+            updateStudyNotificationSync();
+        }, null);
+    }
+
     /** Troca o módulo do assunto (dentro do mesmo tema), mantendo cronômetro e histórico. */
     public void moveStudySubject(long subjectId, long moduleId, @Nullable Runnable onSuccess) {
         runWrite(() -> studyDao.moveToModule(subjectId, moduleId), onSuccess);
     }
 
+    /** Cria um assunto no fim do módulo. */
     public void saveStudySubject(StudySubject subject) {
-        io.execute(() -> {
-            if (subject.id == 0) {
-                subject.position = subject.moduleId == null ? 0 : studyDao.nextSubjectPosition(subject.moduleId);
-                subject.id = studyDao.insertSubject(subject);
-            } else {
-                // Renomear não pode apagar um cronômetro rodando nem desmarcar "concluído"
-                StudySubject current = studyDao.getSubject(subject.id);
-                if (current != null) {
-                    subject.runningSince = current.runningSince;
-                    subject.completed = current.completed;
-                }
-                studyDao.updateSubject(subject);
-            }
-            updateStudyNotificationSync();
+        runIo(() -> {
+            subject.position = subject.moduleId == null ? 0 : studyDao.nextSubjectPosition(subject.moduleId);
+            subject.id = studyDao.insertSubject(subject);
         });
     }
 
     public void deleteStudySubject(StudySubject subject) {
-        io.execute(() -> {
+        runIo(() -> {
             studyDao.deleteSubject(subject);
             updateStudyNotificationSync();
         });
@@ -505,7 +506,7 @@ public class AlfredRepository {
      * rodando, ele é pausado (e o tempo dele é guardado) antes.
      */
     public void startStudyTimer(long subjectId) {
-        io.execute(() -> {
+        runIo(() -> {
             long now = System.currentTimeMillis();
             db.runInTransaction(() -> {
                 for (StudySubject running : studyDao.getRunningSync()) {
@@ -520,7 +521,7 @@ public class AlfredRepository {
 
     /** Pausa o cronômetro do assunto e guarda o tempo no dia (ou dias) correspondente. */
     public void stopStudyTimer(long subjectId) {
-        io.execute(() -> {
+        runIo(() -> {
             long now = System.currentTimeMillis();
             db.runInTransaction(() -> {
                 StudySubject s = studyDao.getSubject(subjectId);
@@ -541,7 +542,7 @@ public class AlfredRepository {
 
     /** Mostra (ou tira) a notificação fixa do cronômetro conforme o que está rodando. */
     public void refreshStudyNotification() {
-        io.execute(this::updateStudyNotificationSync);
+        runIo(this::updateStudyNotificationSync);
     }
 
     private void stopTimerSync(StudySubject s, long endMillis) {
@@ -577,7 +578,7 @@ public class AlfredRepository {
 
     /** Cadastra as tarefas de exemplo (TestData). onDone roda na thread principal. */
     public void insertTestTasks(Runnable onDone) {
-        io.execute(() -> {
+        runIo(() -> {
             List<Task> tasks = TestData.sampleTasks(DateUtils.today());
             List<Long> ids = taskDao.insertAll(tasks);
             for (int i = 0; i < tasks.size(); i++) {
@@ -590,7 +591,7 @@ public class AlfredRepository {
 
     /** Remove todas as tarefas cujo título começa com "[Teste] ". Devolve quantas removeu. */
     public void removeTestTasks(IntConsumer onDone) {
-        io.execute(() -> {
+        runIo(() -> {
             List<Task> tasks = taskDao.getByTitlePrefix(TestData.TITLE_PREFIX);
             for (Task t : tasks) {
                 taskDao.delete(t);
@@ -615,7 +616,7 @@ public class AlfredRepository {
      * @param onDone recebe o total de registros apagados (na thread principal)
      */
     public void purgeOld(IntConsumer onDone) {
-        io.execute(() -> {
+        runIo(() -> {
             long limit = LocalDate.now().minusYears(PURGE_YEARS).toEpochDay();
             int[] removed = {0};
             db.runInTransaction(() -> {
@@ -636,7 +637,7 @@ public class AlfredRepository {
      * ver DayProgress). Resultado na thread principal.
      */
     public void computeTodayProgress(Consumer<DayProgress> onResult) {
-        io.execute(() -> {
+        runIo(() -> {
             long today = DateUtils.today();
             Set<Long> doneMeals = new HashSet<>();
             for (MealLog l : mealDao.getLogsSync(today)) doneMeals.add(l.mealId);
@@ -659,15 +660,30 @@ public class AlfredRepository {
      * na thread principal. Se der erro, nada de mensagem de sucesso.
      */
     private void runWrite(Runnable write, @Nullable Runnable onSuccess) {
-        io.execute(() -> {
-            try {
-                write.run();
-            } catch (RuntimeException e) {
-                android.util.Log.e("Alfred", "Falha ao gravar", e);
-                return;
-            }
+        runIo(() -> {
+            write.run();
             if (onSuccess != null) main.post(onSuccess);
         });
+    }
+
+    /**
+     * Roda o trabalho na thread de fundo sem nunca derrubar o app: um erro do banco (disco
+     * cheio, assunto excluído no meio do caminho...) é registrado e a operação é abandonada,
+     * sem chamar os callbacks de sucesso. Depois de sair da conta (reset), a thread já foi
+     * encerrada e pedidos atrasados de telas antigas são simplesmente ignorados.
+     */
+    private void runIo(Runnable work) {
+        try {
+            io.execute(() -> {
+                try {
+                    work.run();
+                } catch (RuntimeException e) {
+                    AppLog.e("Falha ao gravar", e);
+                }
+            });
+        } catch (RejectedExecutionException e) {
+            AppLog.e("Gravação pedida depois de sair da conta", e);
+        }
     }
 
     // ===================== Sair da conta =====================
@@ -678,13 +694,13 @@ public class AlfredRepository {
      * principal; quem chama então encerra a sessão e chama reset().
      */
     public void logout(Runnable onDone) {
-        io.execute(() -> {
+        runIo(() -> {
             try {
                 stopAllStudyTimersSync();
                 for (Meal m : mealDao.getAllSync()) scheduler.cancel(AlarmScheduler.TYPE_MEAL, m.id);
                 for (Task t : taskDao.getAllSync()) scheduler.cancel(AlarmScheduler.TYPE_TASK, t.id);
             } catch (RuntimeException e) {
-                android.util.Log.e("Alfred", "Falha ao limpar lembretes ao sair", e);
+                AppLog.e("Falha ao limpar lembretes ao sair", e);
             }
             NotificationHelper.cancelStudyTimer(app);
             main.post(onDone);
@@ -695,7 +711,7 @@ public class AlfredRepository {
 
     /** Reagenda todos os lembretes em segundo plano (ao abrir o app). */
     public void rescheduleAll() {
-        io.execute(this::rescheduleAllSync);
+        runIo(this::rescheduleAllSync);
     }
 
     /**

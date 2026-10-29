@@ -504,6 +504,9 @@
     <!-- Canais de notificação -->
     <string name="channel_diet">Refeições</string>
     <string name="channel_study">Estudos (cronômetro)</string>
+    <!-- Texto das notificações com a tela bloqueada: sem dados pessoais -->
+    <string name="notification_public_text">Você tem um lembrete.</string>
+    <string name="study_notification_public">Cronômetro de estudo em andamento.</string>
     <string name="channel_work">Trabalho</string>
     <string name="channel_personal">Pessoal</string>
 

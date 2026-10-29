@@ -6,6 +6,7 @@ import android.content.Intent;
 
 import com.alfred.agenda.account.AccountStore;
 import com.alfred.agenda.data.AlfredRepository;
+import com.alfred.agenda.util.AppLog;
 
 /** Recebe o toque no botão "Pausar" da notificação do cronômetro de estudo. */
 public class StudyTimerReceiver extends BroadcastReceiver {
@@ -21,6 +22,9 @@ public class StudyTimerReceiver extends BroadcastReceiver {
         new Thread(() -> {
             try {
                 AlfredRepository.get(app).stopAllStudyTimersSync();
+            } catch (RuntimeException e) {
+                // Ex.: banco indisponível. Sem tela aberta, um erro aqui derrubaria o app à toa
+                AppLog.e("Falha ao pausar o cronômetro pela notificação", e);
             } finally {
                 result.finish();
             }

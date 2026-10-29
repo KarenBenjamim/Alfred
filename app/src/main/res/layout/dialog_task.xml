@@ -22,7 +22,8 @@
                 android:id="@+id/input_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="textCapSentences" />
+                android:inputType="textCapSentences"
+                android:maxLength="120" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout
@@ -37,6 +38,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="textCapSentences|textMultiLine"
+                android:maxLength="1000"
                 android:minLines="2" />
         </com.google.android.material.textfield.TextInputLayout>
 

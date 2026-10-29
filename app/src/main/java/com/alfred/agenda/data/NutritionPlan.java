@@ -5,6 +5,8 @@ import android.content.Context;
 import androidx.annotation.Nullable;
 
 import com.alfred.agenda.account.AccountStore;
+import com.alfred.agenda.util.AppLog;
+import com.alfred.agenda.util.DataCipher;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -16,6 +18,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -124,6 +127,8 @@ public final class NutritionPlan {
     public final List<Note> notes;
     private final boolean imported;
     private final boolean corrupt;
+    /** Lido de um arquivo antigo, em texto puro (de antes da criptografia): precisa ser regravado. */
+    private boolean legacyPlainFile;
 
     NutritionPlan(String source, long importedAt, List<PlanMeal> meals, List<Group> groups,
                   int waterMlPerKg, String waterTips, List<Note> notes) {
@@ -180,6 +185,15 @@ public final class NutritionPlan {
         synchronized (NutritionPlan.class) {
             if (instance == null || instanceUser != user) {
                 instance = user == 0 ? empty(false) : load(file(context, user));
+                // Plano gravado antes da criptografia: regrava cifrado
+                if (instance.legacyPlainFile) {
+                    try {
+                        writeEncrypted(file(context, user), instance);
+                        instance.legacyPlainFile = false;
+                    } catch (IOException e) {
+                        AppLog.e("Falha ao cifrar o plano antigo", e);
+                    }
+                }
                 instanceUser = user;
             }
             return instance;
@@ -203,27 +217,34 @@ public final class NutritionPlan {
     }
 
     /**
-     * Grava o plano do usuário logado (escreve num arquivo temporário e troca, para nunca
-     * deixar um arquivo pela metade). Chame fora da thread principal.
+     * Grava o plano do usuário logado, cifrado (dados de saúde). Chame fora da thread principal.
      */
     static void save(Context context, NutritionPlan plan) throws IOException {
         int user = AccountStore.currentUserId(context);
         if (user == 0) throw new IOException("Nenhum usuário logado");
-        File target = file(context, user);
+        writeEncrypted(file(context, user), plan);
+        synchronized (NutritionPlan.class) {
+            instance = plan;
+            instanceUser = user;
+        }
+    }
+
+    /**
+     * Escreve num arquivo temporário e troca, para nunca deixar um arquivo pela metade.
+     * O conteúdo é o JSON do plano cifrado com DataCipher (chave no Android Keystore).
+     */
+    private static void writeEncrypted(File target, NutritionPlan plan) throws IOException {
         File tmp = new File(target.getParentFile(), target.getName() + ".tmp");
         try (FileOutputStream out = new FileOutputStream(tmp)) {
-            out.write(plan.toJson().toString().getBytes(StandardCharsets.UTF_8));
+            out.write(DataCipher.encrypt(plan.toJson().toString().getBytes(StandardCharsets.UTF_8)));
             out.getFD().sync();
-        } catch (JSONException e) {
+        } catch (JSONException | GeneralSecurityException e) {
+            tmp.delete();
             throw new IOException("Falha ao montar o plano", e);
         }
         if (!tmp.renameTo(target)) {
             tmp.delete();
             throw new IOException("Falha ao gravar o plano");
-        }
-        synchronized (NutritionPlan.class) {
-            instance = plan;
-            instanceUser = user;
         }
     }
 
@@ -279,7 +300,11 @@ public final class NutritionPlan {
     private static NutritionPlan load(File file) {
         if (!file.exists()) return empty(false);
         try (InputStream in = new FileInputStream(file)) {
-            JSONObject root = new JSONObject(new String(readAll(in), StandardCharsets.UTF_8));
+            byte[] data = readAll(in);
+            // Arquivos de antes da criptografia são JSON puro: lidos assim e regravados cifrados em get()
+            boolean legacy = !DataCipher.isSealed(data);
+            JSONObject root = new JSONObject(new String(legacy ? data : DataCipher.decrypt(data),
+                    StandardCharsets.UTF_8));
 
             List<PlanMeal> meals = new ArrayList<>();
             JSONArray jm = root.getJSONArray("meals");
@@ -316,9 +341,11 @@ public final class NutritionPlan {
             }
 
             JSONObject water = root.getJSONObject("water");
-            return new NutritionPlan(root.optString("source"), root.optLong("importedAt"), meals, groups,
-                    water.optInt("mlPerKg", 0), water.optString("tips"), notes);
-        } catch (IOException | JSONException | RuntimeException e) {
+            NutritionPlan plan = new NutritionPlan(root.optString("source"), root.optLong("importedAt"), meals,
+                    groups, water.optInt("mlPerKg", 0), water.optString("tips"), notes);
+            plan.legacyPlainFile = legacy;
+            return plan;
+        } catch (IOException | JSONException | GeneralSecurityException | RuntimeException e) {
             // Arquivo danificado: o app continua funcionando e a Dieta oferece importar de novo
             return empty(true);
         }

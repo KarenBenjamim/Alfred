@@ -57,9 +57,8 @@ public class StudyViewModel extends AndroidViewModel {
 
     /** Muda nome e cor da matéria. */
     public void editTopic(StudyTopic topic, String name, int colorIndex) {
-        topic.name = name;
-        topic.colorIndex = StudyColors.safeIndex(colorIndex);
-        repo.saveStudyTopic(topic, null);
+        // Não mexe no objeto da lista: a tela só muda quando o banco confirmar
+        repo.editStudyTopic(topic.id, name, StudyColors.safeIndex(colorIndex));
     }
 
     public void deleteTopic(StudyTopic topic) {
@@ -77,8 +76,7 @@ public class StudyViewModel extends AndroidViewModel {
     }
 
     public void renameModule(StudyModule module, String name) {
-        module.name = name;
-        repo.saveStudyModule(module, null);
+        repo.renameStudyModule(module.id, name);
     }
 
     public void deleteModule(StudyModule module) {
@@ -97,8 +95,7 @@ public class StudyViewModel extends AndroidViewModel {
     }
 
     public void renameSubject(StudySubject subject, String name) {
-        subject.name = name;
-        repo.saveStudySubject(subject);
+        repo.renameStudySubject(subject.id, name);
     }
 
     public void deleteSubject(StudySubject subject) {

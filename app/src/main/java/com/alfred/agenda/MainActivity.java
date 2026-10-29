@@ -258,6 +258,7 @@ public class MainActivity extends AppCompatActivity {
             AccountStore.logout(this);
             AlfredRepository.reset();
             NutritionPlan.reset();
+            UserProfile.forget();
             previousTab = TAB_TODAY;
             started = false;
             route(TAB_TODAY);

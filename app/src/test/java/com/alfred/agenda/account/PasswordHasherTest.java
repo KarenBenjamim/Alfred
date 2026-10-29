@@ -34,6 +34,15 @@ public class PasswordHasherTest {
     }
 
     @Test
+    public void corruptedStoredDataIsWrongPasswordNotACrash() {
+        String salt = PasswordHasher.newSalt();
+        String hash = PasswordHasher.hash("segredo1", salt, 1000);
+        assertFalse(PasswordHasher.matches("segredo1", "sal@@inválido", hash, 1000));
+        assertFalse(PasswordHasher.matches("segredo1", salt, "hash@@inválido", 1000));
+        assertFalse(PasswordHasher.matches("segredo1", salt, hash, 0)); // iterações corrompidas
+    }
+
+    @Test
     public void hashNeverContainsThePassword() {
         String salt = PasswordHasher.newSalt();
         assertFalse(PasswordHasher.hash("minhasenha", salt, 1000).contains("minhasenha"));

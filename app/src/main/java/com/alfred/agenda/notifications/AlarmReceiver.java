@@ -10,6 +10,7 @@ import com.alfred.agenda.data.AppDatabase;
 import com.alfred.agenda.data.entity.Meal;
 import com.alfred.agenda.data.entity.Task;
 import com.alfred.agenda.util.AlfredPhrases;
+import com.alfred.agenda.util.AppLog;
 import com.alfred.agenda.util.DateUtils;
 
 /**
@@ -30,6 +31,9 @@ public class AlarmReceiver extends BroadcastReceiver {
         new Thread(() -> {
             try {
                 handle(app, type, id);
+            } catch (RuntimeException e) {
+                // Ex.: banco indisponível. Sem tela aberta, um erro aqui derrubaria o app à toa
+                AppLog.e("Falha ao mostrar o lembrete", e);
             } finally {
                 result.finish();
             }

@@ -49,10 +49,17 @@ public final class PasswordHasher {
         }
     }
 
-    /** Compara em tempo constante (não revela quantos caracteres batem). */
+    /**
+     * Compara em tempo constante (não revela quantos caracteres batem).
+     * Sal ou hash gravados corrompidos (Base64 inválido) contam como senha errada, sem derrubar o app.
+     */
     public static boolean matches(String password, String saltBase64, String expectedHash, int iterations) {
-        byte[] actual = Base64.getDecoder().decode(hash(password, saltBase64, iterations));
-        byte[] expected = Base64.getDecoder().decode(expectedHash);
-        return MessageDigest.isEqual(actual, expected);
+        try {
+            byte[] actual = Base64.getDecoder().decode(hash(password, saltBase64, iterations));
+            byte[] expected = Base64.getDecoder().decode(expectedHash);
+            return MessageDigest.isEqual(actual, expected);
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 }
