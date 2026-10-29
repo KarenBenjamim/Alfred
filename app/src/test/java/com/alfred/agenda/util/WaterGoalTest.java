@@ -43,6 +43,17 @@ public class WaterGoalTest {
     }
 
     @Test
+    public void overflowsOnlyWhenDrinkingPastTheGoal() {
+        assertTrue(WaterGoal.overflows(2400, 2700, 2450));  // o registro cruzou a meta
+        assertTrue(WaterGoal.overflows(2500, 2700, 2450));  // já passou e bebeu mais
+        assertFalse(WaterGoal.overflows(2000, 2450, 2450)); // exatamente na meta: só enche
+        assertFalse(WaterGoal.overflows(2700, 2500, 2450)); // ajuste para baixo
+        assertFalse(WaterGoal.overflows(2700, 2700, 2450)); // mesmo valor (tela reaberta)
+        assertFalse(WaterGoal.overflows(-1, 2700, 2450));   // primeiro valor da tela
+        assertFalse(WaterGoal.overflows(0, 3000, 0));       // sem meta
+    }
+
+    @Test
     public void parseWeightAcceptsCommaOrDot() {
         assertEquals(70.5f, WaterGoal.parseWeight("70,5"), 0f);
         assertEquals(70.5f, WaterGoal.parseWeight(" 70.5 "), 0f);

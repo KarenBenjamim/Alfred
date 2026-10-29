@@ -40,6 +40,14 @@ public final class WaterGoal {
         return Math.min(1f, consumedMl / (float) goalMl);
     }
 
+    /**
+     * O copo transborda quando o usuário registra mais água e o total passa da meta
+     * (inclusive quando o mesmo registro cruza a meta). Diminuir ou só abrir a tela não transborda.
+     */
+    public static boolean overflows(int previousMl, int currentMl, int goalMl) {
+        return goalMl > 0 && previousMl >= 0 && currentMl > previousMl && currentMl > goalMl;
+    }
+
     /** Soma ao total do dia sem deixar negativo nem passar do limite. */
     public static int add(int currentMl, int deltaMl) {
         return Math.max(0, Math.min(MAX_DAY_ML, currentMl + deltaMl));

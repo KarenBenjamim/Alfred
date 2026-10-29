@@ -238,7 +238,7 @@ public class TodayFragment extends Fragment {
         View card = requireView().findViewById(R.id.card_water);
         int goal = WaterGoal.goalMl(requireContext());
         NumberFormat n = NumberFormat.getIntegerInstance(DateUtils.PT_BR);
-        waterGlass.setFraction(WaterGoal.fraction(waterMl, goal));
+        waterGlass.setWater(waterMl, goal);
         if (goal <= 0) {
             // Sem peso no perfil não há meta: o card leva ao Perfil
             waterAmount.setText(getString(R.string.water_amount_no_goal, n.format(waterMl)));

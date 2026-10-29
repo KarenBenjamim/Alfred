@@ -212,8 +212,8 @@
 
                     <com.alfred.agenda.ui.common.WaterGlassView
                         android:id="@+id/water_glass"
-                        android:layout_width="52dp"
-                        android:layout_height="68dp" />
+                        android:layout_width="60dp"
+                        android:layout_height="78dp" />
 
                     <LinearLayout
                         android:layout_width="0dp"

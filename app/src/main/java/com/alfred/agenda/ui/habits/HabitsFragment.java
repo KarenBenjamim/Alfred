@@ -139,7 +139,7 @@ public class HabitsFragment extends Fragment {
     private void renderWater() {
         int goal = WaterGoal.goalMl(requireContext());
         NumberFormat n = NumberFormat.getIntegerInstance(DateUtils.PT_BR);
-        waterGlass.setFraction(WaterGoal.fraction(waterMl, goal));
+        waterGlass.setWater(waterMl, goal);
         if (goal <= 0) {
             waterAmount.setText(getString(R.string.water_amount_no_goal, n.format(waterMl)));
             waterDetail.setText(R.string.water_no_weight);
