@@ -3,9 +3,11 @@ package com.alfred.agenda.account;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 
 import com.alfred.agenda.R;
+import com.alfred.agenda.util.AppLog;
 
 import java.util.Locale;
 import java.util.regex.Pattern;
@@ -102,6 +104,40 @@ public final class AccountStore {
         }
         p.edit().putInt(KEY_CURRENT, id).apply(); // apply já vale na memória; o disco grava em seguida
         return id;
+    }
+
+    // ===================== Contas na nuvem (Firebase) =====================
+
+    /**
+     * Abre a sessão do usuário do Firebase (uid) neste aparelho. Na primeira vez cria uma
+     * conta interna sem senha, só para dar a ele os arquivos próprios (perfil, cache,
+     * lembretes); a senha e o login de verdade ficam com o Firebase.
+     * Devolve o id interno.
+     */
+    public static synchronized int linkCloudUser(Context ctx, String uid, @Nullable String email) {
+        SharedPreferences p = prefs(ctx);
+        String key = cloudKey(uid);
+        int id = p.getInt(key, 0);
+        SharedPreferences.Editor e = p.edit();
+        if (id == 0) {
+            id = p.getInt(KEY_NEXT_ID, 1);
+            e.putInt(KEY_NEXT_ID, id + 1).putInt(key, id).putString("user_" + id + "_uid", uid);
+        }
+        boolean saved = e.putString("user_" + id + "_name", email == null || email.isEmpty() ? "Conta Google" : email)
+                .putInt(KEY_CURRENT, id)
+                .commit(); // síncrono: a próxima tela já lê a sessão
+        if (!saved) AppLog.e("Falha ao gravar a sessão da nuvem", new IllegalStateException());
+        return id;
+    }
+
+    /** uid do Firebase da sessão atual, ou null se for uma conta local antiga (ou ninguém). */
+    @Nullable
+    public static String currentCloudUid(Context ctx) {
+        return prefs(ctx).getString("user_" + currentUserId(ctx) + "_uid", null);
+    }
+
+    private static String cloudKey(String uid) {
+        return "cloud_" + uid;
     }
 
     public static void logout(Context ctx) {

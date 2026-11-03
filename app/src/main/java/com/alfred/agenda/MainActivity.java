@@ -28,6 +28,7 @@ import androidx.fragment.app.Fragment;
 
 import com.alfred.agenda.account.AccountStore;
 import com.alfred.agenda.account.UserProfile;
+import com.alfred.agenda.cloud.CloudAuth;
 import com.alfred.agenda.data.AlfredRepository;
 import com.alfred.agenda.data.NutritionPlan;
 import com.alfred.agenda.data.entity.Task;
@@ -49,6 +50,7 @@ import com.alfred.agenda.util.Honorific;
 import com.alfred.agenda.util.UiUtils;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.imageview.ShapeableImageView;
+import com.google.firebase.auth.FirebaseUser;
 
 /**
  * Activity única do app. Decide o que mostrar:
@@ -186,6 +188,16 @@ public class MainActivity extends AppCompatActivity {
 
     /** Mostra o login, o onboarding ou o app, conforme a sessão e o perfil. */
     private void route(int tab) {
+        // Conta da nuvem: se o Firebase não tem mais essa sessão (saiu em outro lugar, senha
+        // trocada, conta removida), a sessão local também acaba
+        String cloudUid = AccountStore.currentCloudUid(this);
+        if (cloudUid != null) {
+            FirebaseUser user = CloudAuth.currentUser(this);
+            if (user == null || !cloudUid.equals(user.getUid())) {
+                AccountStore.logout(this);
+                UserProfile.forget();
+            }
+        }
         if (!AccountStore.isLoggedIn(this)) {
             showAuthScreen(TAG_LOGIN);
         } else if (!UserProfile.current(this).onboarded) {
@@ -256,6 +268,7 @@ public class MainActivity extends AppCompatActivity {
     public void logout() {
         AlfredRepository.get(this).logout(() -> {
             AccountStore.logout(this);
+            CloudAuth.signOut(this);
             AlfredRepository.reset();
             NutritionPlan.reset();
             UserProfile.forget();

@@ -109,6 +109,27 @@
     <string name="auth_error_mismatch">As senhas não conferem.</string>
     <string name="auth_error_taken">Este usuário já existe neste celular.</string>
     <string name="auth_error_wrong">Usuário ou senha incorretos.</string>
+    <!-- Login na nuvem (Firebase) -->
+    <string name="auth_email">E-mail</string>
+    <string name="auth_cloud_login_subtitle">Às suas ordens. Entre com sua conta para sincronizar com a versão web.</string>
+    <string name="auth_cloud_register_subtitle">Uma conta nova, com os dados salvos na nuvem.</string>
+    <string name="auth_cloud_note">Seus dados ficam na sua conta e sincronizam entre o celular e a web.</string>
+    <string name="auth_emulator_note">Modo de desenvolvimento: conectado aos emuladores locais do Firebase.</string>
+    <string name="auth_or">ou</string>
+    <string name="auth_google">Entrar com Google</string>
+    <string name="auth_forgot">Esqueci minha senha</string>
+    <string name="auth_reset_sent">Se houver uma conta com esse e-mail, {voc}, enviei o link para criar uma nova senha.</string>
+    <string name="auth_error_email">Informe um e-mail válido.</string>
+    <string name="auth_error_cloud_password">A senha precisa ter de %1$d a 64 caracteres.</string>
+    <string name="auth_error_wrong_email">E-mail ou senha incorretos.</string>
+    <string name="auth_error_email_taken">Já existe uma conta com este e-mail. Toque em Entrar.</string>
+    <string name="auth_error_disabled">Esta conta foi desativada.</string>
+    <string name="auth_error_other_method">Este e-mail já entra por outro método (Google ou senha).</string>
+    <string name="auth_error_network">Sem conexão. Verifique a internet e tente de novo.</string>
+    <string name="auth_error_too_many">Muitas tentativas. Aguarde alguns minutos.</string>
+    <string name="auth_error_no_google">Nenhuma conta Google neste aparelho. Adicione uma nas configurações do Android.</string>
+    <string name="auth_error_unavailable">Login na nuvem indisponível nesta versão.</string>
+    <string name="auth_error_generic">Não foi possível entrar agora. Tente de novo.</string>
 
     <!-- Primeiro acesso (onboarding) -->
     <!-- Ex.: "Passo 1 de 4" -->
