@@ -1,8 +1,8 @@
 # Alfred 🎩
 
-Agenda pessoal para Android inspirada no mordomo do Batman. Tudo fica salvo no próprio celular, sem servidor.
+Agenda pessoal para Android inspirada no mordomo do Batman, com uma **versão web** que compartilha os mesmos dados em tempo real (Firebase, plano gratuito). Funciona offline: o que for feito sem internet sincroniza quando a conexão voltar.
 
-**Login e perfil.** As contas são locais: cada conta tem usuário e senha, e os dados (tarefas, dieta, hábitos, estudos) ficam separados por conta. A senha nunca é gravada, só um hash PBKDF2 com sal. No primeiro acesso de cada conta, o Alfred pergunta nome, forma de tratamento ("Senhor", "Senhora", "Senhorita" ou "Pelo nome"), peso e ícone de perfil. Todas as mensagens usam o tratamento escolhido (ex.: "Bom dia, Senhor Bruno" / "Bom dia, Bruno"). O avatar no canto superior esquerdo abre o **Perfil**, onde se edita tudo isso, ficam as **Configurações** e o botão **Sair**. Em *Configurações → Aparência* dá para escolher o tema **Escuro** (padrão), **Claro** ou **Seguir o sistema**.
+**Login e perfil.** Com o Firebase configurado, o login é por **e-mail e senha** ou **conta Google**, e os dados ficam na sua conta na nuvem (ver [Nuvem e versão web](#nuvem-e-versão-web)). Sem Firebase, as contas são locais: usuário e senha, dados só no celular, e a senha nunca é gravada, só um hash PBKDF2 com sal. No primeiro acesso de cada conta, o Alfred pergunta nome, forma de tratamento ("Senhor", "Senhora", "Senhorita" ou "Pelo nome"), peso e ícone de perfil. Todas as mensagens usam o tratamento escolhido (ex.: "Bom dia, Senhor Bruno" / "Bom dia, Bruno"). O avatar no canto superior esquerdo abre o **Perfil**, onde se edita tudo isso, ficam as **Configurações** e o botão **Sair**. Em *Configurações → Aparência* dá para escolher o tema **Escuro** (padrão), **Claro** ou **Seguir o sistema**.
 
 **Navegação:** casinha no canto superior direito = **Início**; barra inferior = **Trabalho, Pessoal, Estudos, Hábitos e Dieta**.
 
@@ -142,14 +142,74 @@ Se algo estiver fora do formato, o app explica o problema com aba, linha e colun
 
 ---
 
+## Nuvem e versão web
+
+O **Firestore** é a fonte da verdade e cada usuário só acessa `usuarios/{uid}` (regras em `firestore.rules`). No celular, o banco local vira um espelho: as telas, os lembretes e o modo offline continuam iguais, e o que muda na web chega ao app em segundos (e vice-versa). Marcações de "feito", água e tempo de estudo usam operações atômicas, então celular e web podem mexer ao mesmo tempo sem perder nada.
+
+| Pasta / arquivo | O que é |
+|---|---|
+| `web/` | Versão web (HTML/CSS/JS, sem build): mesmo login e mesmas abas |
+| `firestore.rules` | Regras de segurança (cada um só lê e grava os próprios dados) |
+| `rules-tests/` | Testes das regras, rodando no emulador |
+| `firebase.json`, `.firebaserc` | Hosting, regras e emuladores |
+| `app/google-services.json` | Configuração do app Android (do console; **fora do git**) |
+| `web/js/firebase-config.js` | Configuração da web (do console; **fora do git**; modelo em `firebase-config.example.js`) |
+
+### Passos no console do Firebase (uma vez)
+
+1. Em [console.firebase.google.com](https://console.firebase.google.com), crie o projeto no plano **Spark** (gratuito). O Google Analytics pode ficar desligado.
+2. **Authentication → Método de login**: ative **E-mail/senha** e **Google**.
+3. **Firestore Database → Criar banco**: modo de **produção**, região `southamerica-east1` (São Paulo).
+4. **Configurações do projeto → Seus apps → Android**: pacote `com.alfred.agenda` e a impressão **SHA-1** da chave que assina o app (obrigatória para o login com Google). Para ver a SHA-1 da chave de depuração:
+   ```
+   keytool -list -v -keystore %USERPROFILE%\.android\debug.keystore -alias androiddebugkey -storepass android -keypass android
+   ```
+   Baixe o `google-services.json` e coloque em `app/`. Recompile: o plugin só é aplicado quando o arquivo existe.
+5. **Seus apps → Web** (`</>`): registre o app e copie o objeto de configuração para `web/js/firebase-config.js` (use `firebase-config.example.js` como modelo).
+
+### Publicar regras e site
+
+Com o [Firebase CLI](https://firebase.google.com/docs/cli) (`npm install -g firebase-tools`):
+
+```
+firebase login
+firebase use --add            (escolha o projeto criado e dê o apelido "prod")
+firebase deploy --project prod --only firestore:rules,hosting
+```
+
+O site fica em `https://SEU-PROJETO.web.app`. Esse domínio já vem autorizado para o login com Google.
+
+### Desenvolvimento sem tocar na nuvem
+
+Sem os arquivos de configuração, a versão de desenvolvimento do app e a web em `localhost` usam os **emuladores locais** (projeto `demo-alfred`, que não existe na nuvem):
+
+```
+firebase emulators:start --only auth,firestore,hosting
+```
+
+- Web: http://127.0.0.1:5000 · painel dos emuladores: http://127.0.0.1:4000
+- App: instale a versão de desenvolvimento no emulador Android; ele se conecta ao PC por `10.0.2.2`.
+- Testes das regras: `firebase emulators:exec --only firestore "npm --prefix rules-tests test"` (rode `npm install` em `rules-tests/` uma vez).
+
+### Backup e migração das contas antigas
+
+- **Backup:** *Configurações → Exportar backup dos dados* salva um `.json` com tudo da conta (sem criptografia; guarde em lugar seguro).
+- **Migração (uma vez):** depois de entrar com a conta da nuvem, *Configurações → Trazer dados de uma conta antiga* pede a senha da conta local antiga, oferece salvar o backup dela antes e envia tudo para a nuvem. Repetir depois de uma falha não duplica nada, e os dados locais antigos não são apagados.
+
+---
+
 ## 5. Estrutura do projeto
 
 ```
 app/src/main/java/com/alfred/agenda/
 ├── AlfredApp.java              # Início do app: cria os canais de notificação
 ├── MainActivity.java           # Login/onboarding/app, cabeçalho, barra inferior, permissões
+├── cloud/
+│   ├── CloudConfig.java        # Firebase real, emuladores (desenvolvimento) ou nenhum
+│   ├── CloudAuth.java          # Login com e-mail/senha e Google
+│   └── CloudSchema.java        # Formato dos documentos no Firestore (igual a web/js/schema.js)
 ├── account/
-│   ├── AccountStore.java       # Contas locais e sessão (um banco por conta)
+│   ├── AccountStore.java       # Sessão, contas da nuvem e contas locais antigas
 │   ├── PasswordHasher.java     # Hash PBKDF2 da senha
 │   └── UserProfile.java        # Nome, tratamento, peso e avatar de cada conta
 ├── data/
@@ -159,6 +219,9 @@ app/src/main/java/com/alfred/agenda/
 │   ├── TestData.java           # Tarefas de exemplo (só em debug)
 │   ├── PlanImport.java         # Lê e valida a planilha da dieta (abas, cabeçalhos, exemplos)
 │   ├── NutritionPlan.java      # Plano importado, guardado num arquivo privado por conta
+│   ├── CloudSync.java          # Espelho Firestore <-> banco local (envio e listeners)
+│   ├── LocalBackup.java        # Backup em JSON de todos os dados de uma conta
+│   ├── LegacyMigration.java    # Envio único de uma conta antiga para a nuvem
 │   └── AlfredRepository.java   # Único ponto de acesso aos dados + agenda os alarmes
 ├── notifications/
 │   ├── AlarmScheduler.java     # Calcula o próximo horário e agenda no AlarmManager
@@ -194,7 +257,7 @@ app/src/main/res/
 └── mipmap-anydpi/              # Ícone do app (gravata-borboleta, vetores em drawable/ic_launcher_*)
 ```
 
-**Fluxo dos dados:** Tela (Fragment) → ViewModel → AlfredRepository → DAO → SQLite.
+**Fluxo dos dados:** Tela (Fragment) → ViewModel → AlfredRepository → DAO → SQLite, e o CloudSync leva cada gravação ao Firestore. O que muda na nuvem (pela web ou outro aparelho) volta pelo CloudSync para o SQLite.
 As telas observam `LiveData`, então qualquer alteração no banco aparece na hora em todas as abas.
 
 ### Dicas para evoluir
