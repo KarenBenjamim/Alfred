@@ -213,6 +213,12 @@
     <string name="backup_choose">Escolher onde salvar</string>
     <string name="backup_done">Backup salvo, {voc}. Seus dados estão a salvo.</string>
     <string name="backup_failed">Não consegui salvar o backup, {voc}. Tente outro local.</string>
+    <string name="settings_import_backup">Importar backup (.json)</string>
+    <string name="settings_import_backup_desc">Traz para a sua conta na nuvem os dados de um arquivo de backup do Alfred</string>
+    <string name="backup_import_msg">Escolha um arquivo exportado em \"Exportar backup dos dados\", {voc}. Tarefas, dieta, hábitos, água e estudos dele vão para a sua conta na nuvem, e o perfil (nome e peso) passa a ser o do arquivo. Importar o mesmo arquivo de novo não duplica nada.</string>
+    <string name="backup_import_choose">Escolher arquivo</string>
+    <string name="backup_import_progress">Importando o backup…</string>
+    <string name="backup_import_invalid">Este arquivo não é um backup do Alfred que eu consiga ler, {voc}.</string>
     <string name="settings_migrate">Trazer dados de uma conta antiga</string>
     <string name="settings_migrate_desc">Envia para a nuvem os dados de uma conta deste celular de antes do login com e-mail</string>
     <string name="migration_choose">Qual conta antiga?</string>

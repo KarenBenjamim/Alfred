@@ -747,7 +747,7 @@ public class AlfredRepository {
             AppDatabase legacyDb = AppDatabase.openForAccount(app, legacyId);
             try (OutputStream out = app.getContentResolver().openOutputStream(target, "wt")) {
                 if (out == null) throw new IOException("Destino indisponível");
-                JSONObject backup = LocalBackup.build(legacyDb, username, UserProfile.forAccount(app, legacyId),
+                JSONObject backup = LocalBackup.build(legacyDb, legacyId, username, UserProfile.forAccount(app, legacyId),
                         NutritionPlan.forAccount(app, legacyId), appVersion);
                 out.write(backup.toString(2).getBytes(StandardCharsets.UTF_8));
             } catch (IOException | JSONException | RuntimeException e) {
@@ -801,6 +801,60 @@ public class AlfredRepository {
             int err = error;
             main.post(() -> cb.done(r, err));
         }, "alfred-migracao").start();
+    }
+
+    /** Arquivos de backup maiores que isto são recusados (protege a memória do celular). */
+    private static final long MAX_BACKUP_BYTES = 20L * 1024 * 1024;
+
+    /**
+     * Importa um arquivo de backup (.json exportado pelo app) para a conta da nuvem logada.
+     * Roda numa thread própria e espera a confirmação do servidor, como a migração.
+     */
+    public void importBackupFile(Uri source, MigrationCallback cb) {
+        String uid = AccountStore.currentCloudUid(app);
+        if (uid == null || sync == null) {
+            cb.done(null, R.string.migration_error_not_cloud);
+            return;
+        }
+        new Thread(() -> {
+            LegacyMigration.Result result = null;
+            int error = 0;
+            try {
+                JSONObject backup = new JSONObject(readText(source));
+                LegacyMigration.validate(backup);
+                Map<String, Long> habits = new HashMap<>();
+                for (Habit h : habitDao.getAllSync()) habits.put(LegacyMigration.normalize(h.name), h.id);
+                result = LegacyMigration.importBackup(backup, uid, habits);
+            } catch (LegacyMigration.InvalidBackup | JSONException | IOException e) {
+                AppLog.e("Backup inválido", e);
+                error = R.string.backup_import_invalid;
+            } catch (java.util.concurrent.TimeoutException e) {
+                error = R.string.migration_error_timeout;
+            } catch (Exception e) {
+                AppLog.e("Falha ao importar o backup", e);
+                error = R.string.migration_error;
+            }
+            LegacyMigration.Result r = result;
+            int err = error;
+            main.post(() -> cb.done(r, err));
+        }, "alfred-importar-backup").start();
+    }
+
+    /** Lê o arquivo escolhido como texto UTF-8, com limite de tamanho. */
+    private String readText(Uri source) throws IOException {
+        try (java.io.InputStream in = app.getContentResolver().openInputStream(source)) {
+            if (in == null) throw new IOException("Arquivo indisponível");
+            java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+            byte[] buf = new byte[8192];
+            long total = 0;
+            int n;
+            while ((n = in.read(buf)) > 0) {
+                total += n;
+                if (total > MAX_BACKUP_BYTES) throw new IOException("Arquivo grande demais");
+                out.write(buf, 0, n);
+            }
+            return new String(out.toByteArray(), StandardCharsets.UTF_8);
+        }
     }
 
     // ===================== Expurgo =====================

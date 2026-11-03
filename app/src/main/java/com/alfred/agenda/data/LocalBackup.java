@@ -43,12 +43,17 @@ public final class LocalBackup {
 
     /** Monta o backup da conta logada, lendo o banco. Chame fora da thread principal. */
     static JSONObject build(Context ctx, AppDatabase db, @Nullable String appVersion) throws JSONException {
-        return build(db, AccountStore.currentUsername(ctx), UserProfile.current(ctx), NutritionPlan.get(ctx),
-                appVersion);
+        return build(db, AccountStore.currentUserId(ctx), AccountStore.currentUsername(ctx), UserProfile.current(ctx),
+                NutritionPlan.get(ctx), appVersion);
     }
 
-    /** Backup de uma conta qualquer deste aparelho (também usado na migração de contas antigas). */
-    static JSONObject build(AppDatabase db, String username, UserProfile p, NutritionPlan plan,
+    /**
+     * Backup de uma conta qualquer deste aparelho (também usado na migração de contas antigas).
+     *
+     * @param accountId número da conta neste aparelho: com ele, importar o arquivo e migrar a
+     *                  conta geram os mesmos ids na nuvem (não duplica)
+     */
+    static JSONObject build(AppDatabase db, int accountId, String username, UserProfile p, NutritionPlan plan,
                             @Nullable String appVersion) throws JSONException {
         JSONObject root = new JSONObject();
         root.put("app", "Alfred");
@@ -57,6 +62,7 @@ public final class LocalBackup {
         root.put("versaoBanco", db.getOpenHelper().getReadableDatabase().getVersion());
         root.put("exportadoEm", Instant.now().toString());
         root.put("usuario", username);
+        root.put("contaId", accountId);
 
         root.put("perfil", new JSONObject()
                 .put("nome", p.name)

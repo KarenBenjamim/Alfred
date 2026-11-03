@@ -50,6 +50,12 @@ public class SettingsFragment extends Fragment {
 
     private LinearLayout prefs;
 
+    /** "Abrir" do sistema: a usuária escolhe o arquivo de backup a importar. */
+    private final ActivityResultLauncher<String[]> pickBackup =
+            registerForActivityResult(new ActivityResultContracts.OpenDocument(), uri -> {
+                if (uri != null && isAdded()) runImport(uri);
+            });
+
     /** Conta antiga cujo backup está sendo salvo (null = a conta logada). */
     @Nullable
     private AccountStore.LegacyAccount backupOfLegacy;
@@ -86,6 +92,11 @@ public class SettingsFragment extends Fragment {
         // Dados
         addRow(data, R.drawable.ic_download, getString(R.string.settings_backup),
                 getString(R.string.settings_backup_desc), this::confirmBackup);
+        // Conta da nuvem: importar um arquivo de backup (ex.: de antes de reinstalar o app)
+        if (AccountStore.currentCloudUid(requireContext()) != null) {
+            addRow(data, R.drawable.ic_upload, getString(R.string.settings_import_backup),
+                    getString(R.string.settings_import_backup_desc), this::confirmImport);
+        }
         // Conta da nuvem com contas locais antigas neste celular: oferece trazer os dados (uma vez)
         if (AccountStore.currentCloudUid(requireContext()) != null
                 && !AccountStore.pendingLegacyAccounts(requireContext()).isEmpty()) {
@@ -225,6 +236,38 @@ public class SettingsFragment extends Fragment {
             }
             dialog.dismiss();
             runMigration(account, password);
+        });
+    }
+
+    // ---------------- Importar arquivo de backup ----------------
+
+    private void confirmImport() {
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.settings_import_backup)
+                .setMessage(Honorific.str(requireContext(), R.string.backup_import_msg))
+                .setNegativeButton(R.string.cancel, null)
+                .setPositiveButton(R.string.backup_import_choose, (d, w) ->
+                        // Alguns gerenciadores de arquivo não marcam .json como JSON
+                        pickBackup.launch(new String[]{"application/json", "application/octet-stream", "text/plain"}))
+                .show();
+    }
+
+    private void runImport(android.net.Uri uri) {
+        View progress = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_progress, null);
+        AlertDialog wait = new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.backup_import_progress)
+                .setView(progress)
+                .setCancelable(false)
+                .show();
+        MainActivity activity = (MainActivity) requireActivity();
+        AlfredRepository.get(requireContext()).importBackupFile(uri, (result, errorRes) -> {
+            wait.dismiss();
+            if (result != null) {
+                activity.showMessage(Honorific.str(activity, R.string.migration_done, result.tasks,
+                        result.meals, result.habits, result.subjects, result.waterDays));
+            } else {
+                activity.showMessage(Honorific.str(activity, errorRes));
+            }
         });
     }
 

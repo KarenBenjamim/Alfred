@@ -100,14 +100,30 @@ public final class LegacyMigration {
             for (AccountStore.LegacyAccount a : AccountStore.pendingLegacyAccounts(ctx)) {
                 if (a.id == legacyId) username = a.username;
             }
-            backup = LocalBackup.build(legacyDb, username, UserProfile.forAccount(ctx, legacyId),
+            backup = LocalBackup.build(legacyDb, legacyId, username, UserProfile.forAccount(ctx, legacyId),
                     NutritionPlan.forAccount(ctx, legacyId), appVersion);
         } finally {
             legacyDb.close();
         }
         Result result = new Result();
-        List<Write> writes = plan(backup, "u" + legacyId, existingHabits, result);
+        send(uid, plan(backup, scopeOf(backup), existingHabits, result));
+        AccountStore.markMigrated(ctx, legacyId, uid);
+        return result;
+    }
 
+    /**
+     * Importa um arquivo de backup (exportado pelo app) para a conta da nuvem logada.
+     * O mesmo arquivo importado duas vezes regrava os mesmos documentos (não duplica).
+     * Chame fora da thread principal.
+     */
+    static Result importBackup(JSONObject backup, String uid, Map<String, Long> existingHabits) throws Exception {
+        Result result = new Result();
+        send(uid, plan(backup, scopeOf(backup), existingHabits, result));
+        return result;
+    }
+
+    /** Envia as gravações em lotes e espera o servidor confirmar cada um. */
+    private static void send(String uid, List<Write> writes) throws Exception {
         DocumentReference user = FirebaseFirestore.getInstance().collection(CloudSchema.USERS).document(uid);
         for (int i = 0; i < writes.size(); i += BATCH) {
             WriteBatch batch = user.getFirestore().batch();
@@ -119,8 +135,33 @@ public final class LegacyMigration {
             // Offline, o commit só confirma quando a internet voltar: aqui esperamos no máximo 1 min
             Tasks.await(batch.commit(), CONFIRM_SECONDS, TimeUnit.SECONDS);
         }
-        AccountStore.markMigrated(ctx, legacyId, uid);
-        return result;
+    }
+
+    // ===================== Validação do arquivo (pura) =====================
+
+    /** Arquivo de backup inválido (não é do Alfred, formato novo demais ou danificado). */
+    static final class InvalidBackup extends Exception {
+        InvalidBackup(String message) {
+            super(message);
+        }
+    }
+
+    /** Confere se o JSON é um backup do Alfred que esta versão entende. */
+    static void validate(JSONObject backup) throws InvalidBackup {
+        if (!"Alfred".equals(backup.optString("app"))) throw new InvalidBackup("não é um backup do Alfred");
+        int format = backup.optInt("formato", 0);
+        if (format < 1 || format > LocalBackup.FORMAT) throw new InvalidBackup("formato " + format + " não suportado");
+        if (backup.optJSONObject("tabelas") == null) throw new InvalidBackup("sem tabelas");
+    }
+
+    /**
+     * Prefixo dos ids na nuvem: o mesmo para a migração da conta e para o backup dela
+     * ("u" + número da conta). Backups sem o número (versões antigas) usam o usuário.
+     */
+    static String scopeOf(JSONObject backup) {
+        int account = backup.optInt("contaId", 0);
+        if (account > 0) return "u" + account;
+        return "backup:" + backup.optString("usuario").trim().toLowerCase(Locale.ROOT);
     }
 
     // ===================== Montagem (pura) =====================
