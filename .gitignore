@@ -22,3 +22,6 @@ node_modules/
 firebase-debug.log
 firestore-debug.log
 ui-debug.log
+
+# Configuração do Firebase da versão web (copiada do console; fica só na máquina)
+web/js/firebase-config.js

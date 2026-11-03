@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Política de segurança: só o próprio site, o SDK do Firebase (gstatic) e os servidores do Google.
+       As portas 127.0.0.1:9099/8080 são os emuladores locais (desenvolvimento). Fica aqui (e não no
+       firebase.json) para valer igual no teste local; o bloqueio de iframe vai como cabeçalho. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://apis.google.com http://127.0.0.1:9099 http://127.0.0.1:8080; frame-src https://*.firebaseapp.com https://*.web.app https://accounts.google.com; img-src 'self' data: https://*.googleusercontent.com; style-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#0B0B0D">
+  <title>Alfred</title>
+  <link rel="icon" href="img/alfred_logo.png">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+  <!-- Enquanto o Firebase inicia -->
+  <div id="boot" class="boot">
+    <img src="img/alfred_logo.png" alt="" width="96" height="96" class="logo">
+    <p>Às suas ordens…</p>
+  </div>
+
+  <!-- Login / criação de conta (mostrado por app.js) -->
+  <main id="login" class="login" hidden>
+    <img src="img/alfred_logo.png" alt="" width="112" height="112" class="logo">
+    <h1 class="brand">Alfred</h1>
+    <p id="login-subtitle" class="caption">Às suas ordens. Entre com sua conta para sincronizar com o app.</p>
+    <form id="login-form" novalidate>
+      <label>E-mail
+        <input id="login-email" type="email" autocomplete="email" maxlength="254" required>
+      </label>
+      <label>Senha
+        <input id="login-password" type="password" autocomplete="current-password" maxlength="64" required>
+      </label>
+      <label id="login-confirm-label" hidden>Confirmar senha
+        <input id="login-confirm" type="password" autocomplete="new-password" maxlength="64">
+      </label>
+      <p id="login-error" class="error" role="alert"></p>
+      <button id="login-submit" class="primary" type="submit">Entrar</button>
+      <button id="login-forgot" class="text" type="button">Esqueci minha senha</button>
+      <button id="login-switch" class="text" type="button">Ainda não tem conta? Criar conta</button>
+      <p class="caption or">ou</p>
+      <button id="login-google" class="secondary" type="button">Entrar com Google</button>
+    </form>
+    <p id="login-note" class="caption note">Seus dados ficam na sua conta e sincronizam entre a web e o celular.</p>
+  </main>
+
+  <!-- App (cabeçalho, abas e conteúdo montados por app.js) -->
+  <div id="app" hidden>
+    <header class="header">
+      <button id="header-avatar" class="avatar-btn" type="button" aria-label="Perfil"><img alt="" width="40" height="40"></button>
+      <div class="header-text">
+        <span class="brand">Alfred</span>
+        <span id="header-subtitle" class="caption"></span>
+      </div>
+      <span id="sync-status" class="sync" role="status"></span>
+    </header>
+    <nav id="tabs" class="tabs" aria-label="Abas"></nav>
+    <main id="content" class="content"></main>
+  </div>
+
+  <dialog id="dialog"></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
