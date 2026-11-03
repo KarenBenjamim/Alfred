@@ -307,49 +307,54 @@ public final class NutritionPlan {
             JSONObject root = new JSONObject(new String(legacy ? data : DataCipher.decrypt(data),
                     StandardCharsets.UTF_8));
 
-            List<PlanMeal> meals = new ArrayList<>();
-            JSONArray jm = root.getJSONArray("meals");
-            for (int i = 0; i < jm.length(); i++) {
-                JSONObject m = jm.getJSONObject(i);
-                List<PlanItem> items = new ArrayList<>();
-                JSONArray ji = m.getJSONArray("items");
-                for (int j = 0; j < ji.length(); j++) {
-                    JSONObject it = ji.getJSONObject(j);
-                    List<String> subs = new ArrayList<>();
-                    JSONArray js = it.getJSONArray("substitutions");
-                    for (int k = 0; k < js.length(); k++) subs.add(js.getString(k));
-                    items.add(new PlanItem(readFood(it), subs, it.optInt("group"), it.optString("portions")));
-                }
-                meals.add(new PlanMeal(parseTime(m.getString("time")), m.getString("name"),
-                        m.optString("notes"), items));
-            }
-
-            List<Group> groups = new ArrayList<>();
-            JSONArray jg = root.getJSONArray("groups");
-            for (int i = 0; i < jg.length(); i++) {
-                JSONObject g = jg.getJSONObject(i);
-                List<Food> foods = new ArrayList<>();
-                JSONArray jf = g.getJSONArray("items");
-                for (int j = 0; j < jf.length(); j++) foods.add(readFood(jf.getJSONObject(j)));
-                groups.add(new Group(g.getInt("number"), g.getString("name"), foods));
-            }
-
-            List<Note> notes = new ArrayList<>();
-            JSONArray jn = root.getJSONArray("notes");
-            for (int i = 0; i < jn.length(); i++) {
-                JSONObject n = jn.getJSONObject(i);
-                notes.add(new Note(n.getString("topic"), n.getString("text")));
-            }
-
-            JSONObject water = root.getJSONObject("water");
-            NutritionPlan plan = new NutritionPlan(root.optString("source"), root.optLong("importedAt"), meals,
-                    groups, water.optInt("mlPerKg", 0), water.optString("tips"), notes);
+            NutritionPlan plan = fromJson(root);
             plan.legacyPlainFile = legacy;
             return plan;
         } catch (IOException | JSONException | GeneralSecurityException | RuntimeException e) {
             // Arquivo danificado: o app continua funcionando e a Dieta oferece importar de novo
             return empty(true);
         }
+    }
+
+    /** Plano a partir do JSON (arquivo local ou documento plano/atual da nuvem). */
+    static NutritionPlan fromJson(JSONObject root) throws JSONException {
+        List<PlanMeal> meals = new ArrayList<>();
+        JSONArray jm = root.getJSONArray("meals");
+        for (int i = 0; i < jm.length(); i++) {
+            JSONObject m = jm.getJSONObject(i);
+            List<PlanItem> items = new ArrayList<>();
+            JSONArray ji = m.getJSONArray("items");
+            for (int j = 0; j < ji.length(); j++) {
+                JSONObject it = ji.getJSONObject(j);
+                List<String> subs = new ArrayList<>();
+                JSONArray js = it.getJSONArray("substitutions");
+                for (int k = 0; k < js.length(); k++) subs.add(js.getString(k));
+                items.add(new PlanItem(readFood(it), subs, it.optInt("group"), it.optString("portions")));
+            }
+            meals.add(new PlanMeal(parseTime(m.getString("time")), m.getString("name"),
+                    m.optString("notes"), items));
+        }
+
+        List<Group> groups = new ArrayList<>();
+        JSONArray jg = root.getJSONArray("groups");
+        for (int i = 0; i < jg.length(); i++) {
+            JSONObject g = jg.getJSONObject(i);
+            List<Food> foods = new ArrayList<>();
+            JSONArray jf = g.getJSONArray("items");
+            for (int j = 0; j < jf.length(); j++) foods.add(readFood(jf.getJSONObject(j)));
+            groups.add(new Group(g.getInt("number"), g.getString("name"), foods));
+        }
+
+        List<Note> notes = new ArrayList<>();
+        JSONArray jn = root.getJSONArray("notes");
+        for (int i = 0; i < jn.length(); i++) {
+            JSONObject n = jn.getJSONObject(i);
+            notes.add(new Note(n.getString("topic"), n.getString("text")));
+        }
+
+        JSONObject water = root.getJSONObject("water");
+        return new NutritionPlan(root.optString("source"), root.optLong("importedAt"), meals,
+                groups, water.optInt("mlPerKg", 0), water.optString("tips"), notes);
     }
 
     private static Food readFood(JSONObject o) {

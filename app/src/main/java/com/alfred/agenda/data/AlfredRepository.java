@@ -8,6 +8,9 @@ import android.os.Looper;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.LiveData;
 
+import com.alfred.agenda.account.AccountStore;
+import com.alfred.agenda.cloud.CloudConfig;
+import com.alfred.agenda.cloud.CloudSchema;
 import com.alfred.agenda.data.dao.MealDao;
 import com.alfred.agenda.data.dao.TaskDao;
 import com.alfred.agenda.data.dao.HabitDao;
@@ -59,7 +62,9 @@ import java.util.function.IntConsumer;
  * Ponto único de acesso aos dados. Os ViewModels falam só com o repositório,
  * que cuida de:
  *  - executar gravações fora da thread principal (Room não permite na thread de UI);
- *  - agendar/cancelar os alarmes sempre que algo é salvo ou excluído.
+ *  - agendar/cancelar os alarmes sempre que algo é salvo ou excluído;
+ *  - em contas da nuvem, enviar cada gravação ao Firestore e espelhar no banco local o que
+ *    muda lá (CloudSync). As telas continuam lendo do banco local, que funciona offline.
  *
  * Há uma instância por usuário logado: ao sair da conta, logout() + reset() descartam a atual
  * e a próxima chamada a get() usa o banco do novo usuário.
@@ -77,6 +82,9 @@ public class AlfredRepository {
     private final WaterDao waterDao;
     private final AlarmScheduler scheduler;
     private final Context app;
+    /** Sincronização com o Firestore; null em contas locais (sem nuvem). */
+    @Nullable
+    private final CloudSync sync;
 
     /** Uma única thread de fundo: as gravações acontecem na ordem em que foram pedidas. */
     private final ExecutorService io = Executors.newSingleThreadExecutor();
@@ -104,6 +112,8 @@ public class AlfredRepository {
             AlfredRepository old = instance;
             instance = null;
             AppDatabase oldDb = AppDatabase.forget();
+            // Os listeners da nuvem param antes da thread de banco (que eles usam) ser encerrada
+            if (old != null && old.sync != null) old.sync.stop();
             if (old != null) {
                 if (oldDb != null) old.io.execute(oldDb::close);
                 old.io.shutdown();
@@ -123,6 +133,18 @@ public class AlfredRepository {
         studyDao = db.studyDao();
         waterDao = db.waterDao();
         scheduler = new AlarmScheduler(app);
+        String uid = AccountStore.currentCloudUid(app);
+        if (uid != null && CloudConfig.isAvailable(app)) {
+            sync = new CloudSync(app, db, uid, scheduler, io, this::updateStudyNotificationSync);
+            sync.start();
+        } else {
+            sync = null;
+        }
+    }
+
+    /** Id para um registro novo: aleatório nas contas da nuvem (o mesmo no Firestore), 0 = automático. */
+    private long newId() {
+        return sync != null ? CloudSchema.newId() : 0;
     }
 
     // ===================== Dieta =====================
@@ -139,8 +161,12 @@ public class AlfredRepository {
     public void saveMeal(Meal meal, List<MealItem> items) {
         runIo(() -> {
             db.runInTransaction(() -> {
-                if (meal.id == 0) meal.id = mealDao.insert(meal);
-                else mealDao.update(meal);
+                if (meal.id == 0) {
+                    meal.id = newId();
+                    meal.id = mealDao.insert(meal);
+                } else {
+                    mealDao.update(meal);
+                }
                 mealDao.deleteItems(meal.id);
                 for (int i = 0; i < items.size(); i++) {
                     MealItem item = items.get(i);
@@ -151,6 +177,7 @@ public class AlfredRepository {
                 mealDao.insertItems(items);
             });
             scheduler.scheduleMeal(meal);
+            if (sync != null) sync.pushMeal(meal.id);
         });
     }
 
@@ -158,6 +185,7 @@ public class AlfredRepository {
         runIo(() -> {
             mealDao.delete(meal);
             scheduler.cancel(AlarmScheduler.TYPE_MEAL, meal.id);
+            if (sync != null) sync.deleteDoc(CloudSchema.MEALS, meal.id);
         });
     }
 
@@ -174,13 +202,22 @@ public class AlfredRepository {
         runIo(() -> {
             try {
                 NutritionPlan.save(app, plan);
-                for (Meal old : mealDao.getAllSync()) scheduler.cancel(AlarmScheduler.TYPE_MEAL, old.id);
+                List<Long> oldIds = new ArrayList<>();
+                for (Meal old : mealDao.getAllSync()) {
+                    scheduler.cancel(AlarmScheduler.TYPE_MEAL, old.id);
+                    oldIds.add(old.id);
+                }
                 List<Meal> saved = new ArrayList<>();
                 db.runInTransaction(() -> {
                     mealDao.deleteAll();
                     for (NutritionPlan.PlanMeal pm : plan.meals) saved.add(insertPlanMeal(pm));
                 });
                 for (Meal m : saved) scheduler.scheduleMeal(m);
+                if (sync != null) {
+                    sync.pushPlan(plan);
+                    sync.deleteDocs(CloudSchema.MEALS, oldIds);
+                    for (Meal m : saved) sync.pushMeal(m.id);
+                }
             } catch (IOException | RuntimeException e) {
                 AppLog.e("Falha ao importar o plano", e);
                 main.post(onError);
@@ -197,6 +234,7 @@ public class AlfredRepository {
         meal.notes = pm.notes;
         // Várias opções no mesmo horário: só a 1ª avisa, para não tocar 3 vezes às 17h
         meal.notifyEnabled = !pm.isAlternativeOption();
+        meal.id = newId();
         meal.id = mealDao.insert(meal);
 
         List<MealItem> items = new ArrayList<>();
@@ -231,6 +269,7 @@ public class AlfredRepository {
             } else {
                 mealDao.deleteLog(mealId, epochDay);
             }
+            if (sync != null) sync.setMealDone(mealId, epochDay, done);
         }, onSuccess);
     }
 
@@ -249,15 +288,20 @@ public class AlfredRepository {
         runIo(() -> {
             if (habit.id == 0) {
                 habit.position = habitDao.nextPosition();
+                habit.id = newId();
                 habit.id = habitDao.insert(habit);
             } else {
                 habitDao.update(habit);
             }
+            if (sync != null) sync.pushHabit(habit);
         });
     }
 
     public void deleteHabit(Habit habit) {
-        runIo(() -> habitDao.delete(habit));
+        runIo(() -> {
+            habitDao.delete(habit);
+            if (sync != null) sync.deleteDoc(CloudSchema.HABITS, habit.id);
+        });
     }
 
     public void setHabitDone(long habitId, long epochDay, boolean done) {
@@ -275,6 +319,7 @@ public class AlfredRepository {
             } else {
                 habitDao.deleteLog(habitId, epochDay);
             }
+            if (sync != null) sync.setHabitDone(habitId, epochDay, done);
         }, onSuccess);
     }
 
@@ -295,13 +340,18 @@ public class AlfredRepository {
             int current = log == null ? 0 : log.ml;
             total[0] = WaterGoal.add(current, deltaMl);
             putWater(epochDay, total[0]);
+            // Na nuvem, a soma é atômica (soma lá exatamente o que mudou aqui, já limitado)
+            if (sync != null) sync.addWater(epochDay, total[0] - current);
         }), onSuccess == null ? null : () -> onSuccess.accept(total[0]));
     }
 
     /** Corrige o total do dia ("Ajustar"). */
     public void setWater(long epochDay, int ml, @Nullable IntConsumer onSuccess) {
         int value = WaterGoal.add(0, ml);
-        runWrite(() -> putWater(epochDay, value), onSuccess == null ? null : () -> onSuccess.accept(value));
+        runWrite(() -> {
+            putWater(epochDay, value);
+            if (sync != null) sync.setWater(epochDay, value);
+        }, onSuccess == null ? null : () -> onSuccess.accept(value));
     }
 
     private void putWater(long epochDay, int ml) {
@@ -329,9 +379,14 @@ public class AlfredRepository {
 
     public void saveTask(Task task) {
         runIo(() -> {
-            if (task.id == 0) task.id = taskDao.insert(task);
-            else taskDao.update(task);
+            if (task.id == 0) {
+                task.id = newId();
+                task.id = taskDao.insert(task);
+            } else {
+                taskDao.update(task);
+            }
             scheduler.scheduleTask(task);
+            if (sync != null) sync.pushTask(task.id);
         });
     }
 
@@ -347,6 +402,7 @@ public class AlfredRepository {
         runWrite(() -> {
             taskDao.update(task);
             scheduler.scheduleTask(task);
+            if (sync != null) sync.pushTask(task.id);
         }, onSuccess);
     }
 
@@ -361,8 +417,12 @@ public class AlfredRepository {
         }
         runIo(() -> {
             db.runInTransaction(() -> {
-                if (task.id == 0) task.id = taskDao.insert(task);
-                else taskDao.update(task);
+                if (task.id == 0) {
+                    task.id = newId();
+                    task.id = taskDao.insert(task);
+                } else {
+                    taskDao.update(task);
+                }
                 tagDao.clearTaskTags(task.id);
                 List<TaskTag> links = new ArrayList<>();
                 for (long tagId : tagIds) {
@@ -374,6 +434,7 @@ public class AlfredRepository {
                 tagDao.insertTaskTags(links);
             });
             scheduler.scheduleTask(task);
+            if (sync != null) sync.pushTask(task.id);
         });
     }
 
@@ -381,6 +442,7 @@ public class AlfredRepository {
         runIo(() -> {
             taskDao.delete(task);
             scheduler.cancel(AlarmScheduler.TYPE_TASK, task.id);
+            if (sync != null) sync.deleteDoc(CloudSchema.TASKS, task.id);
         });
     }
 
@@ -397,15 +459,25 @@ public class AlfredRepository {
     /** Cria ou atualiza a tag. onSaved recebe a tag já com id (na thread principal). */
     public void saveTag(Tag tag, @Nullable Consumer<Tag> onSaved) {
         runIo(() -> {
-            if (tag.id == 0) tag.id = tagDao.insert(tag);
-            else tagDao.update(tag);
+            if (tag.id == 0) {
+                tag.id = newId();
+                tag.id = tagDao.insert(tag);
+            } else {
+                tagDao.update(tag);
+            }
+            if (sync != null) sync.pushTag(tag);
             if (onSaved != null) main.post(() -> onSaved.accept(tag));
         });
     }
 
     /** Exclui a tag (ela some de todas as tarefas; as tarefas continuam). */
     public void deleteTag(Tag tag) {
-        runIo(() -> tagDao.delete(tag));
+        runIo(() -> {
+            // Tarefas que usavam a tag: lidas antes, porque o CASCADE local apaga as ligações
+            List<Long> tasks = sync != null ? db.syncDao().taskIdsWithTag(tag.id) : null;
+            tagDao.delete(tag);
+            if (sync != null) sync.deleteTag(tag.id, tasks);
+        });
     }
 
     // ===================== Estudos =====================
@@ -434,7 +506,9 @@ public class AlfredRepository {
     public void saveStudyTopic(StudyTopic topic, @Nullable Consumer<StudyTopic> onSaved) {
         runIo(() -> {
             topic.position = studyDao.nextTopicPosition();
+            topic.id = newId();
             topic.id = studyDao.insertTopic(topic);
+            if (sync != null) sync.pushTopic(topic.id);
             if (onSaved != null) main.post(() -> onSaved.accept(topic));
         });
     }
@@ -442,8 +516,12 @@ public class AlfredRepository {
     /** Exclui o tema com todos os assuntos e o tempo registrado. */
     public void deleteStudyTopic(StudyTopic topic) {
         runIo(() -> {
+            // Filhos lidos antes do CASCADE local: na nuvem não há cascata
+            List<Long> modules = sync != null ? db.syncDao().moduleIdsOfTopic(topic.id) : null;
+            List<Long> subjects = sync != null ? db.syncDao().subjectIdsOfTopic(topic.id) : null;
             studyDao.deleteTopic(topic);
             updateStudyNotificationSync();
+            if (sync != null) sync.deleteTopic(topic.id, modules, subjects);
         });
     }
 
@@ -451,7 +529,9 @@ public class AlfredRepository {
     public void saveStudyModule(StudyModule module, @Nullable Consumer<StudyModule> onSaved) {
         runIo(() -> {
             module.position = studyDao.nextModulePosition(module.topicId);
+            module.id = newId();
             module.id = studyDao.insertModule(module);
+            if (sync != null) sync.pushModule(module.id);
             if (onSaved != null) main.post(() -> onSaved.accept(module));
         });
     }
@@ -459,23 +539,37 @@ public class AlfredRepository {
     /** Exclui o módulo com os assuntos e o tempo registrado neles. */
     public void deleteStudyModule(StudyModule module) {
         runIo(() -> {
+            List<Long> subjects = sync != null ? db.syncDao().subjectIdsOfModule(module.id) : null;
             studyDao.deleteModule(module);
             updateStudyNotificationSync();
+            if (sync != null) {
+                sync.deleteDoc(CloudSchema.MODULES, module.id);
+                sync.deleteDocs(CloudSchema.SUBJECTS, subjects);
+            }
         });
     }
 
     /** Marca/desmarca o assunto como concluído. @param onSuccess só se a gravação deu certo */
     public void setStudySubjectCompleted(long subjectId, boolean completed, @Nullable Runnable onSuccess) {
-        runWrite(() -> studyDao.setCompleted(subjectId, completed), onSuccess);
+        runWrite(() -> {
+            studyDao.setCompleted(subjectId, completed);
+            if (sync != null) sync.pushSubject(subjectId);
+        }, onSuccess);
     }
 
     /** Muda nome e cor da matéria (só esses campos). */
     public void editStudyTopic(long topicId, String name, int colorIndex) {
-        runWrite(() -> studyDao.editTopic(topicId, name, colorIndex), null);
+        runWrite(() -> {
+            studyDao.editTopic(topicId, name, colorIndex);
+            if (sync != null) sync.pushTopic(topicId);
+        }, null);
     }
 
     public void renameStudyModule(long moduleId, String name) {
-        runWrite(() -> studyDao.renameModule(moduleId, name), null);
+        runWrite(() -> {
+            studyDao.renameModule(moduleId, name);
+            if (sync != null) sync.pushModule(moduleId);
+        }, null);
     }
 
     /** Renomeia o assunto; a notificação do cronômetro (se for ele que está rodando) acompanha. */
@@ -483,19 +577,25 @@ public class AlfredRepository {
         runWrite(() -> {
             studyDao.renameSubject(subjectId, name);
             updateStudyNotificationSync();
+            if (sync != null) sync.pushSubject(subjectId);
         }, null);
     }
 
     /** Troca o módulo do assunto (dentro do mesmo tema), mantendo cronômetro e histórico. */
     public void moveStudySubject(long subjectId, long moduleId, @Nullable Runnable onSuccess) {
-        runWrite(() -> studyDao.moveToModule(subjectId, moduleId), onSuccess);
+        runWrite(() -> {
+            studyDao.moveToModule(subjectId, moduleId);
+            if (sync != null) sync.pushSubject(subjectId);
+        }, onSuccess);
     }
 
     /** Cria um assunto no fim do módulo. */
     public void saveStudySubject(StudySubject subject) {
         runIo(() -> {
             subject.position = subject.moduleId == null ? 0 : studyDao.nextSubjectPosition(subject.moduleId);
+            subject.id = newId();
             subject.id = studyDao.insertSubject(subject);
+            if (sync != null) sync.pushSubject(subject.id);
         });
     }
 
@@ -503,6 +603,7 @@ public class AlfredRepository {
         runIo(() -> {
             studyDao.deleteSubject(subject);
             updateStudyNotificationSync();
+            if (sync != null) sync.deleteDoc(CloudSchema.SUBJECTS, subject.id);
         });
     }
 
@@ -518,7 +619,10 @@ public class AlfredRepository {
                     if (running.id != subjectId) stopTimerSync(running, now);
                 }
                 StudySubject s = studyDao.getSubject(subjectId);
-                if (s != null && !s.isRunning()) studyDao.setRunningSince(subjectId, now);
+                if (s != null && !s.isRunning()) {
+                    studyDao.setRunningSince(subjectId, now);
+                    if (sync != null) sync.pushSubject(subjectId); // a web vê o cronômetro rodando
+                }
             });
             updateStudyNotificationSync();
         });
@@ -553,6 +657,7 @@ public class AlfredRepository {
     private void stopTimerSync(StudySubject s, long endMillis) {
         addStudyTimeSync(s.id, s.runningSince, endMillis);
         studyDao.setRunningSince(s.id, 0);
+        if (sync != null) sync.pushSubject(s.id);
     }
 
     /**
@@ -561,6 +666,7 @@ public class AlfredRepository {
      */
     private void addStudyTimeSync(long subjectId, long startMillis, long endMillis) {
         Map<Long, Long> byDay = StudyTime.splitByDay(startMillis, endMillis, ZoneId.systemDefault());
+        if (sync != null) sync.addStudyTime(subjectId, byDay); // soma atômica na nuvem
         for (Map.Entry<Long, Long> e : byDay.entrySet()) {
             StudyLog log = studyDao.getLog(subjectId, e.getKey());
             if (log == null) {
@@ -585,10 +691,12 @@ public class AlfredRepository {
     public void insertTestTasks(Runnable onDone) {
         runIo(() -> {
             List<Task> tasks = TestData.sampleTasks(DateUtils.today());
+            for (Task t : tasks) t.id = newId();
             List<Long> ids = taskDao.insertAll(tasks);
             for (int i = 0; i < tasks.size(); i++) {
                 tasks.get(i).id = ids.get(i);
                 scheduler.scheduleTask(tasks.get(i));
+                if (sync != null) sync.pushTask(tasks.get(i).id);
             }
             main.post(onDone);
         });
@@ -601,6 +709,7 @@ public class AlfredRepository {
             for (Task t : tasks) {
                 taskDao.delete(t);
                 scheduler.cancel(AlarmScheduler.TYPE_TASK, t.id);
+                if (sync != null) sync.deleteDoc(CloudSchema.TASKS, t.id);
             }
             main.post(() -> onDone.accept(tasks.size()));
         });
@@ -644,6 +753,9 @@ public class AlfredRepository {
     public void purgeOld(IntConsumer onDone) {
         runIo(() -> {
             long limit = LocalDate.now().minusYears(PURGE_YEARS).toEpochDay();
+            // O que vai sumir também precisa sumir na nuvem (lido antes de apagar aqui)
+            List<Long> oldTasks = sync != null ? db.syncDao().taskIdsOlderThan(limit) : null;
+            List<Long> oldWater = sync != null ? db.syncDao().waterDaysOlderThan(limit) : null;
             int[] removed = {0};
             db.runInTransaction(() -> {
                 removed[0] += taskDao.deleteOlderThan(limit);
@@ -652,6 +764,7 @@ public class AlfredRepository {
                 removed[0] += studyDao.deleteLogsOlderThan(limit);
                 removed[0] += waterDao.deleteOlderThan(limit);
             });
+            if (sync != null && removed[0] > 0) sync.purgeRemote(oldTasks, oldWater);
             main.post(() -> onDone.accept(removed[0]));
         });
     }

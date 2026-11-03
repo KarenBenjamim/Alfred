@@ -3,6 +3,7 @@ package com.alfred.agenda.account;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import com.alfred.agenda.data.CloudSync;
 import com.alfred.agenda.util.AppLog;
 import com.alfred.agenda.util.DataCipher;
 import com.alfred.agenda.util.Honorific;
@@ -72,6 +73,14 @@ public final class UserProfile {
 
     /** Grava o perfil do usuário logado. Devolve false se a gravação falhar. */
     public boolean save(Context ctx) {
+        if (!saveLocal(ctx)) return false;
+        // Conta da nuvem: o perfil também vai para usuarios/{uid} (sincroniza com a web)
+        CloudSync.pushProfile(ctx, this);
+        return true;
+    }
+
+    /** Grava só neste aparelho (usado também quando o perfil chega da nuvem). */
+    public boolean saveLocal(Context ctx) {
         int id = AccountStore.currentUserId(ctx);
         if (id == 0) return false;
         name = Honorific.normalizeName(name);

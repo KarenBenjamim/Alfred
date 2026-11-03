@@ -113,8 +113,11 @@ public final class AccountStore {
      * conta interna sem senha, só para dar a ele os arquivos próprios (perfil, cache,
      * lembretes); a senha e o login de verdade ficam com o Firebase.
      * Devolve o id interno.
+     *
+     * @param newAccount conta acabou de ser criada: recebe os hábitos sugeridos na nuvem (uma vez)
      */
-    public static synchronized int linkCloudUser(Context ctx, String uid, @Nullable String email) {
+    public static synchronized int linkCloudUser(Context ctx, String uid, @Nullable String email,
+                                                 boolean newAccount) {
         SharedPreferences p = prefs(ctx);
         String key = cloudKey(uid);
         int id = p.getInt(key, 0);
@@ -123,6 +126,7 @@ public final class AccountStore {
             id = p.getInt(KEY_NEXT_ID, 1);
             e.putInt(KEY_NEXT_ID, id + 1).putInt(key, id).putString("user_" + id + "_uid", uid);
         }
+        if (newAccount) e.putBoolean(seedKey(id), true);
         boolean saved = e.putString("user_" + id + "_name", email == null || email.isEmpty() ? "Conta Google" : email)
                 .putInt(KEY_CURRENT, id)
                 .commit(); // síncrono: a próxima tela já lê a sessão
@@ -134,6 +138,19 @@ public final class AccountStore {
     @Nullable
     public static String currentCloudUid(Context ctx) {
         return prefs(ctx).getString("user_" + currentUserId(ctx) + "_uid", null);
+    }
+
+    /** A conta da nuvem recém-criada ainda espera os hábitos sugeridos? Responde só uma vez. */
+    public static synchronized boolean takeSeedFlag(Context ctx) {
+        SharedPreferences p = prefs(ctx);
+        String key = seedKey(currentUserId(ctx));
+        if (!p.getBoolean(key, false)) return false;
+        p.edit().remove(key).apply();
+        return true;
+    }
+
+    private static String seedKey(int id) {
+        return "user_" + id + "_seed_habits";
     }
 
     private static String cloudKey(String uid) {

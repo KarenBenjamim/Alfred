@@ -26,6 +26,7 @@ import com.alfred.agenda.util.UiUtils;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.FirebaseUserMetadata;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -196,7 +197,8 @@ public class LoginFragment extends Fragment {
 
         setBusy(true);
         if (cloud) {
-            CloudAuth.Callback cb = (errorRes, cancelled) -> onCloudResult(errorRes);
+            boolean newAccount = registerMode;
+            CloudAuth.Callback cb = (errorRes, cancelled) -> onCloudResult(errorRes, newAccount);
             if (registerMode) CloudAuth.register(requireContext(), user, pass, cb);
             else CloudAuth.signIn(requireContext(), user, pass, cb);
             return;
@@ -227,7 +229,7 @@ public class LoginFragment extends Fragment {
                 if (isAdded()) setBusy(false);
                 return;
             }
-            onCloudResult(errorRes);
+            onCloudResult(errorRes, false); // conta Google nova: descoberta pelos metadados abaixo
         });
     }
 
@@ -256,14 +258,18 @@ public class LoginFragment extends Fragment {
     }
 
     /** Firebase respondeu: liga a conta da nuvem a este aparelho e entra. */
-    private void onCloudResult(int errorRes) {
+    private void onCloudResult(int errorRes, boolean newAccount) {
         if (!isAdded()) return;
         if (errorRes == 0) {
             FirebaseUser user = CloudAuth.currentUser(requireContext());
             if (user == null) {
                 errorRes = R.string.auth_error_generic;
             } else {
-                AccountStore.linkCloudUser(requireContext(), user.getUid(), user.getEmail());
+                // Primeiro login (criação e último acesso no mesmo instante) também conta como conta nova
+                FirebaseUserMetadata meta = user.getMetadata();
+                boolean fresh = meta != null
+                        && Math.abs(meta.getLastSignInTimestamp() - meta.getCreationTimestamp()) < 5_000;
+                AccountStore.linkCloudUser(requireContext(), user.getUid(), user.getEmail(), newAccount || fresh);
             }
         }
         onResult(errorRes);

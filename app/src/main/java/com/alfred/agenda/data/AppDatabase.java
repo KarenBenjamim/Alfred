@@ -13,6 +13,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase;
 
 import com.alfred.agenda.data.dao.HabitDao;
 import com.alfred.agenda.data.dao.StudyDao;
+import com.alfred.agenda.data.dao.SyncDao;
 import com.alfred.agenda.data.dao.TagDao;
 import com.alfred.agenda.data.dao.MealDao;
 import com.alfred.agenda.data.dao.TaskDao;
@@ -61,6 +62,9 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract TaskDao taskDao();
 
     public abstract WaterDao waterDao();
+
+    /** Espelho da nuvem (CloudSync): gravações em lote vindas do Firestore. */
+    public abstract SyncDao syncDao();
 
     /**
      * Versão 1 -> 2: a tabela "work_tasks" virou "tasks" e ganhou as colunas
@@ -216,10 +220,13 @@ public abstract class AppDatabase extends RoomDatabase {
         if (db != null && name.equals(instanceName)) return db;
         synchronized (AppDatabase.class) {
             if (instance == null || !name.equals(instanceName)) {
-                instance = Room.databaseBuilder(context.getApplicationContext(), AppDatabase.class, name)
-                        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
-                        .addCallback(SEED_CALLBACK)
-                        .build();
+                Builder<AppDatabase> builder = Room.databaseBuilder(context.getApplicationContext(),
+                                AppDatabase.class, name)
+                        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8);
+                // Conta da nuvem: o banco é um espelho do Firestore; os hábitos sugeridos vão
+                // para a nuvem ao criar a conta (CloudSync), senão o espelho os apagaria
+                if (AccountStore.currentCloudUid(context) == null) builder.addCallback(SEED_CALLBACK);
+                instance = builder.build();
                 instanceName = name;
             }
             return instance;
