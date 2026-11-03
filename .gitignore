@@ -16,3 +16,9 @@ alfred_backup_*.json
 
 # Configuração do Firebase (baixada do console; fica só na máquina)
 app/google-services.json
+
+# Dependências e logs do Node / Firebase CLI
+node_modules/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log

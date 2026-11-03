@@ -1,0 +1,13 @@
+{
+  "name": "alfred-rules-tests",
+  "private": true,
+  "description": "Testes das regras de segurança do Firestore (rodam no emulador local)",
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "6.0.0",
+    "firebase": "13.2.0"
+  }
+}

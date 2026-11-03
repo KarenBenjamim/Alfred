@@ -1,0 +1,31 @@
+rules_version = '2';
+
+// Regras do Alfred: cada usuário só lê e grava os PRÓPRIOS dados, em usuarios/{uid}.
+// Tudo o que não estiver liberado aqui é negado (o Firestore nega por padrão).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // Coleções previstas na estrutura aprovada (fase 1). Uma coleção nova precisa
+    // entrar nesta lista, o que evita gravar lixo em nomes arbitrários.
+    function isKnownCollection(col) {
+      return col in ['tarefas', 'tags', 'refeicoes', 'plano', 'habitos', 'agua',
+                     'estudos_materias', 'estudos_modulos', 'estudos_assuntos'];
+    }
+
+    // Perfil: nome, tratamento, peso, avatar, onboarding
+    match /usuarios/{uid} {
+      allow read, write: if isOwner(uid);
+
+      match /{col}/{docId} {
+        allow read, delete: if isOwner(uid) && isKnownCollection(col);
+        // No máximo 60 campos por documento: evita documentos inchados que gastam a cota gratuita
+        allow create, update: if isOwner(uid) && isKnownCollection(col)
+                              && request.resource.data.size() <= 60;
+      }
+    }
+  }
+}
