@@ -7,9 +7,11 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.text.InputType;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -18,12 +20,14 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.alfred.agenda.MainActivity;
 import com.alfred.agenda.R;
 import com.alfred.agenda.util.Honorific;
+import com.alfred.agenda.account.AccountStore;
 import com.alfred.agenda.data.AlfredRepository;
 import com.alfred.agenda.data.LocalBackup;
 import com.alfred.agenda.data.NutritionPlan;
@@ -32,8 +36,10 @@ import com.alfred.agenda.notifications.NotificationHelper;
 import com.alfred.agenda.util.ThemePrefs;
 import com.alfred.agenda.util.UiUtils;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.textfield.TextInputLayout;
 
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * Configurações (abertas pelo Perfil). Só mostra o que existe de verdade no app:
@@ -44,14 +50,22 @@ public class SettingsFragment extends Fragment {
 
     private LinearLayout prefs;
 
+    /** Conta antiga cujo backup está sendo salvo (null = a conta logada). */
+    @Nullable
+    private AccountStore.LegacyAccount backupOfLegacy;
+
     /** "Salvar como" do sistema: a usuária escolhe onde guardar o backup (sem pedir permissão). */
     private final ActivityResultLauncher<String> saveBackup =
             registerForActivityResult(new ActivityResultContracts.CreateDocument("application/json"), uri -> {
+                AccountStore.LegacyAccount legacy = backupOfLegacy;
+                backupOfLegacy = null;
                 if (uri == null || !isAdded()) return; // cancelou
                 MainActivity activity = (MainActivity) requireActivity();
-                AlfredRepository.get(requireContext()).exportBackup(uri, appVersion(),
-                        () -> activity.showMessage(Honorific.str(activity, R.string.backup_done)),
-                        () -> activity.showMessage(Honorific.str(activity, R.string.backup_failed)));
+                Runnable ok = () -> activity.showMessage(Honorific.str(activity, R.string.backup_done));
+                Runnable fail = () -> activity.showMessage(Honorific.str(activity, R.string.backup_failed));
+                AlfredRepository repo = AlfredRepository.get(requireContext());
+                if (legacy == null) repo.exportBackup(uri, appVersion(), ok, fail);
+                else repo.exportLegacyBackup(uri, legacy.id, legacy.username, appVersion(), ok, fail);
             });
 
     @Nullable
@@ -72,6 +86,12 @@ public class SettingsFragment extends Fragment {
         // Dados
         addRow(data, R.drawable.ic_download, getString(R.string.settings_backup),
                 getString(R.string.settings_backup_desc), this::confirmBackup);
+        // Conta da nuvem com contas locais antigas neste celular: oferece trazer os dados (uma vez)
+        if (AccountStore.currentCloudUid(requireContext()) != null
+                && !AccountStore.pendingLegacyAccounts(requireContext()).isEmpty()) {
+            addRow(data, R.drawable.ic_upload, getString(R.string.settings_migrate),
+                    getString(R.string.settings_migrate_desc), this::chooseLegacyAccount);
+        }
         addRow(data, R.drawable.ic_storage, getString(R.string.settings_purge),
                 getString(R.string.settings_purge_value), null);
         addRow(data, R.drawable.ic_upload, getString(R.string.settings_import_plan),
@@ -151,8 +171,84 @@ public class SettingsFragment extends Fragment {
                 .setMessage(Honorific.str(requireContext(), R.string.backup_warning))
                 .setNegativeButton(R.string.cancel, null)
                 .setPositiveButton(R.string.backup_choose, (d, w) -> saveBackup.launch(
-                        LocalBackup.suggestedFileName(requireContext(), LocalDate.now().toString())))
+                        LocalBackup.suggestedFileName(AccountStore.currentUsername(requireContext()),
+                                LocalDate.now().toString())))
                 .show();
+    }
+
+    // ---------------- Migração de conta antiga ----------------
+
+    private void chooseLegacyAccount() {
+        List<AccountStore.LegacyAccount> accounts = AccountStore.pendingLegacyAccounts(requireContext());
+        if (accounts.isEmpty()) {
+            ((MainActivity) requireActivity()).showMessage(Honorific.str(requireContext(), R.string.migration_none));
+            return;
+        }
+        if (accounts.size() == 1) {
+            confirmMigration(accounts.get(0));
+            return;
+        }
+        CharSequence[] names = new CharSequence[accounts.size()];
+        for (int i = 0; i < names.length; i++) names[i] = accounts.get(i).username;
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.migration_choose)
+                .setItems(names, (d, which) -> confirmMigration(accounts.get(which)))
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
+    /** Pede a senha da conta antiga (prova que é dela) e oferece o backup antes de enviar. */
+    private void confirmMigration(AccountStore.LegacyAccount account) {
+        View view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_text_input, null);
+        TextInputLayout layout = view.findViewById(R.id.layout_text);
+        EditText input = view.findViewById(R.id.input_text);
+        layout.setHint(R.string.migration_password);
+        layout.setEndIconMode(TextInputLayout.END_ICON_PASSWORD_TOGGLE);
+        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+
+        AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(getString(R.string.migration_title, account.username))
+                .setMessage(Honorific.str(requireContext(), R.string.migration_msg, account.username))
+                .setView(view)
+                .setNeutralButton(R.string.migration_backup_first, (d, w) -> {
+                    backupOfLegacy = account;
+                    saveBackup.launch(LocalBackup.suggestedFileName(account.username, LocalDate.now().toString()));
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .setPositiveButton(R.string.migration_send, null) // validado abaixo
+                .show();
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(b -> {
+            String password = input.getText() == null ? "" : input.getText().toString();
+            if (password.isEmpty()) {
+                layout.setError(getString(R.string.auth_error_required));
+                return;
+            }
+            dialog.dismiss();
+            runMigration(account, password);
+        });
+    }
+
+    private void runMigration(AccountStore.LegacyAccount account, String password) {
+        View progress = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_progress, null);
+        AlertDialog wait = new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.migration_progress)
+                .setView(progress)
+                .setCancelable(false)
+                .show();
+        MainActivity activity = (MainActivity) requireActivity();
+        AlfredRepository.get(requireContext()).migrateLegacyAccount(account.id, password, appVersion(),
+                (result, errorRes) -> {
+                    wait.dismiss();
+                    if (result != null) {
+                        activity.showMessage(Honorific.str(activity, R.string.migration_done, result.tasks,
+                                result.meals, result.habits, result.subjects, result.waterDays));
+                    } else if (errorRes == R.string.auth_error_wrong) {
+                        activity.showMessage(getString(R.string.migration_wrong_password));
+                        if (isAdded()) confirmMigration(account);
+                    } else {
+                        activity.showMessage(Honorific.str(activity, errorRes));
+                    }
+                });
     }
 
     private String appVersion() {

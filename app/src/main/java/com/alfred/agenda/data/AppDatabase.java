@@ -189,6 +189,17 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    /**
+     * Abre o banco de OUTRA conta deste aparelho (migração para a nuvem), fora do singleton.
+     * Sem hábitos sugeridos; quem chama fecha com close().
+     */
+    static AppDatabase openForAccount(Context context, int accountId) {
+        return Room.databaseBuilder(context.getApplicationContext(), AppDatabase.class,
+                        AccountStore.databaseName(accountId))
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+                .build();
+    }
+
     /** Cadastra os hábitos sugeridos (Habit.SUGGESTIONS). */
     static void insertSuggestedHabits(SupportSQLiteDatabase db) {
         for (int i = 0; i < Habit.SUGGESTIONS.length; i++) {

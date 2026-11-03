@@ -54,4 +54,6 @@ dependencies {
 
     // Testes unitários das regras puras (cores das tags, progresso do dia, cronômetro...)
     testImplementation 'junit:junit:4.13.2'
+    // org.json de verdade nos testes da JVM (no Android ele vem do sistema; no JUnit seria só um stub)
+    testImplementation 'org.json:json:20260814'
 }

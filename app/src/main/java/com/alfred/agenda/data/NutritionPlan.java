@@ -200,6 +200,11 @@ public final class NutritionPlan {
         }
     }
 
+    /** Plano de outra conta deste aparelho (migração para a nuvem), sem mexer no que está em memória. */
+    static NutritionPlan forAccount(Context context, int user) {
+        return load(file(context, user));
+    }
+
     /** Descarta o que está em memória e lê o arquivo de novo ("Tentar novamente"). */
     public static NutritionPlan reload(Context context) {
         synchronized (NutritionPlan.class) {

@@ -9,6 +9,8 @@ import androidx.annotation.StringRes;
 import com.alfred.agenda.R;
 import com.alfred.agenda.util.AppLog;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
@@ -178,6 +180,51 @@ public final class AccountStore {
     public static String databaseName(Context ctx) {
         int id = currentUserId(ctx);
         if (id == 0) throw new IllegalStateException("Nenhum usuário logado");
+        return databaseName(id);
+    }
+
+    public static String databaseName(int id) {
         return id == 1 ? "alfred.db" : "alfred_u" + id + ".db";
+    }
+
+    // ===================== Contas locais antigas (migração para a nuvem) =====================
+
+    /** Conta local com senha (de antes da nuvem). */
+    public static final class LegacyAccount {
+        public final int id;
+        public final String username;
+
+        LegacyAccount(int id, String username) {
+            this.id = id;
+            this.username = username;
+        }
+    }
+
+    /** Contas locais com senha que ainda não foram enviadas para a nuvem. */
+    public static List<LegacyAccount> pendingLegacyAccounts(Context ctx) {
+        SharedPreferences p = prefs(ctx);
+        List<LegacyAccount> out = new ArrayList<>();
+        int next = p.getInt(KEY_NEXT_ID, 1);
+        for (int id = 1; id < next; id++) {
+            String base = "user_" + id;
+            if (p.getString(base + "_hash", null) == null) continue;     // conta da nuvem (sem senha)
+            if (p.getString(base + "_migrated_to", null) != null) continue; // já enviada
+            out.add(new LegacyAccount(id, p.getString(base + "_name", "")));
+        }
+        return out;
+    }
+
+    /** Confere a senha de uma conta local antiga (lento: chame fora da thread principal). */
+    public static boolean checkLegacyPassword(Context ctx, int id, String password) {
+        SharedPreferences p = prefs(ctx);
+        String salt = p.getString("user_" + id + "_salt", null);
+        String hash = p.getString("user_" + id + "_hash", null);
+        int iterations = p.getInt("user_" + id + "_iter", PasswordHasher.ITERATIONS);
+        return salt != null && hash != null && PasswordHasher.matches(password, salt, hash, iterations);
+    }
+
+    /** Marca a conta local como já enviada para a conta da nuvem (some da lista de pendentes). */
+    public static void markMigrated(Context ctx, int id, String uid) {
+        prefs(ctx).edit().putString("user_" + id + "_migrated_to", uid).apply();
     }
 }

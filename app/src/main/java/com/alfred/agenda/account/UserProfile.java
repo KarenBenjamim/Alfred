@@ -51,7 +51,22 @@ public final class UserProfile {
         if (id == 0) return new UserProfile();
         UserProfile c = cached;
         if (c != null && cachedUser == id) return c.copy();
+        UserProfile p = read(ctx, id);
+        cache(p, id);
+        // Perfil antigo, em texto puro: grava cifrado e apaga as chaves antigas
+        if (p.legacyPlain) p.write(ctx, id);
+        return p.copy();
+    }
 
+    /** Perfil de outra conta deste aparelho (migração para a nuvem), sem mexer na sessão. */
+    public static UserProfile forAccount(Context ctx, int id) {
+        return read(ctx, id);
+    }
+
+    /** Lido em texto puro (versão antiga): precisa ser regravado cifrado. */
+    private transient boolean legacyPlain;
+
+    private static UserProfile read(Context ctx, int id) {
         UserProfile p = new UserProfile();
         SharedPreferences sp = prefs(ctx, id);
         p.form = Honorific.safeForm(sp.getInt(KEY_FORM, Honorific.FORM_NAME));
@@ -65,10 +80,8 @@ public final class UserProfile {
             p.name = decrypt(sp.getString(KEY_NAME, null), "");
             p.weightKg = parseWeight(decrypt(sp.getString(KEY_WEIGHT, null), "0"));
         }
-        cache(p, id);
-        // Perfil antigo, em texto puro: grava cifrado e apaga as chaves antigas
-        if (legacy) p.write(ctx, id);
-        return p.copy();
+        p.legacyPlain = legacy;
+        return p;
     }
 
     /** Grava o perfil do usuário logado. Devolve false se a gravação falhar. */

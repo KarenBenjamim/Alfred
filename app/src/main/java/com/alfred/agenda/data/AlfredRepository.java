@@ -8,7 +8,9 @@ import android.os.Looper;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.LiveData;
 
+import com.alfred.agenda.R;
 import com.alfred.agenda.account.AccountStore;
+import com.alfred.agenda.account.UserProfile;
 import com.alfred.agenda.cloud.CloudConfig;
 import com.alfred.agenda.cloud.CloudSchema;
 import com.alfred.agenda.data.dao.MealDao;
@@ -41,6 +43,7 @@ import com.alfred.agenda.util.StudyTime;
 import com.alfred.agenda.util.WaterGoal;
 
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -48,6 +51,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -734,6 +738,69 @@ public class AlfredRepository {
             }
             main.post(onSuccess);
         });
+    }
+
+    /** Backup de uma conta local antiga deste aparelho (antes de migrá-la para a nuvem). */
+    public void exportLegacyBackup(Uri target, int legacyId, String username, @Nullable String appVersion,
+                                   Runnable onSuccess, Runnable onError) {
+        runIo(() -> {
+            AppDatabase legacyDb = AppDatabase.openForAccount(app, legacyId);
+            try (OutputStream out = app.getContentResolver().openOutputStream(target, "wt")) {
+                if (out == null) throw new IOException("Destino indisponível");
+                JSONObject backup = LocalBackup.build(legacyDb, username, UserProfile.forAccount(app, legacyId),
+                        NutritionPlan.forAccount(app, legacyId), appVersion);
+                out.write(backup.toString(2).getBytes(StandardCharsets.UTF_8));
+            } catch (IOException | JSONException | RuntimeException e) {
+                AppLog.e("Falha ao exportar o backup da conta antiga", e);
+                main.post(onError);
+                return;
+            } finally {
+                legacyDb.close();
+            }
+            main.post(onSuccess);
+        });
+    }
+
+    // ===================== Migração de conta antiga para a nuvem =====================
+
+    /** Resultado da migração: result != null deu certo; senão errorRes diz o motivo. */
+    public interface MigrationCallback {
+        void done(@Nullable LegacyMigration.Result result, int errorRes);
+    }
+
+    /**
+     * Confere a senha da conta local antiga e envia os dados dela para a conta da nuvem logada.
+     * Roda numa thread própria: espera a confirmação do servidor (até 1 min por lote) sem
+     * travar a fila de gravações nem a sincronização.
+     */
+    public void migrateLegacyAccount(int legacyId, String password, @Nullable String appVersion,
+                                     MigrationCallback cb) {
+        String uid = AccountStore.currentCloudUid(app);
+        if (uid == null || sync == null) {
+            cb.done(null, R.string.migration_error_not_cloud);
+            return;
+        }
+        new Thread(() -> {
+            LegacyMigration.Result result = null;
+            int error = 0;
+            try {
+                if (!AccountStore.checkLegacyPassword(app, legacyId, password)) {
+                    error = R.string.auth_error_wrong;
+                } else {
+                    Map<String, Long> habits = new HashMap<>();
+                    for (Habit h : habitDao.getAllSync()) habits.put(LegacyMigration.normalize(h.name), h.id);
+                    result = LegacyMigration.run(app, legacyId, uid, habits, appVersion);
+                }
+            } catch (java.util.concurrent.TimeoutException e) {
+                error = R.string.migration_error_timeout;
+            } catch (Exception e) {
+                AppLog.e("Falha na migração", e);
+                error = R.string.migration_error;
+            }
+            LegacyMigration.Result r = result;
+            int err = error;
+            main.post(() -> cb.done(r, err));
+        }, "alfred-migracao").start();
     }
 
     // ===================== Expurgo =====================

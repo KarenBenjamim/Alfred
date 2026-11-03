@@ -41,17 +41,23 @@ public final class LocalBackup {
     private LocalBackup() {
     }
 
-    /** Monta o backup lendo o banco. Chame fora da thread principal. */
+    /** Monta o backup da conta logada, lendo o banco. Chame fora da thread principal. */
     static JSONObject build(Context ctx, AppDatabase db, @Nullable String appVersion) throws JSONException {
+        return build(db, AccountStore.currentUsername(ctx), UserProfile.current(ctx), NutritionPlan.get(ctx),
+                appVersion);
+    }
+
+    /** Backup de uma conta qualquer deste aparelho (também usado na migração de contas antigas). */
+    static JSONObject build(AppDatabase db, String username, UserProfile p, NutritionPlan plan,
+                            @Nullable String appVersion) throws JSONException {
         JSONObject root = new JSONObject();
         root.put("app", "Alfred");
         root.put("formato", FORMAT);
         root.put("versaoApp", appVersion == null ? "" : appVersion);
         root.put("versaoBanco", db.getOpenHelper().getReadableDatabase().getVersion());
         root.put("exportadoEm", Instant.now().toString());
-        root.put("usuario", AccountStore.currentUsername(ctx));
+        root.put("usuario", username);
 
-        UserProfile p = UserProfile.current(ctx);
         root.put("perfil", new JSONObject()
                 .put("nome", p.name)
                 .put("tratamento", p.form)
@@ -59,7 +65,6 @@ public final class LocalBackup {
                 .put("avatar", p.avatar)
                 .put("onboarding", p.onboarded));
 
-        NutritionPlan plan = NutritionPlan.get(ctx);
         root.put("planoAlimentar", plan.isImported() ? plan.toJson() : JSONObject.NULL);
 
         JSONObject tables = new JSONObject();
@@ -91,8 +96,8 @@ public final class LocalBackup {
     }
 
     /** Nome sugerido para o arquivo: alfred_backup_<usuario>_<data>.json */
-    public static String suggestedFileName(Context ctx, String isoDate) {
-        String user = AccountStore.currentUsername(ctx).replaceAll("[^A-Za-z0-9_.-]", "");
+    public static String suggestedFileName(String username, String isoDate) {
+        String user = username.replaceAll("[^A-Za-z0-9_.-]", "");
         return "alfred_backup_" + (user.isEmpty() ? "conta" : user) + "_" + isoDate + ".json";
     }
 }
