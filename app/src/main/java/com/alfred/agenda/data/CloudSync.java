@@ -363,7 +363,12 @@ public final class CloudSync {
             if (!snap.getMetadata().isFromCache() && local.onboarded) pushProfile(app, local);
             return;
         }
-        Map<String, Object> m = data(snap);
+        applyProfileData(app, data(snap));
+    }
+
+    /** Grava neste aparelho o perfil que veio da nuvem (só se algo mudou). */
+    private static void applyProfileData(Context app, Map<String, Object> m) {
+        UserProfile local = UserProfile.current(app);
         UserProfile p = local.copy();
         Object name = m.get("nome");
         if (name instanceof String) p.name = (String) name;
@@ -548,6 +553,42 @@ public final class CloudSync {
     }
 
     // ===================== Perfil =====================
+
+    /**
+     * Logo depois do login: traz o perfil da nuvem ANTES de decidir entre onboarding e app.
+     * Num aparelho novo, quem já tem conta não precisa responder o onboarding de novo.
+     * Sem internet (ou demorando mais de alguns segundos), segue com o que houver aqui.
+     *
+     * @param done roda na thread principal
+     */
+    public static void fetchProfile(Context ctx, Runnable done) {
+        String uid = AccountStore.currentCloudUid(ctx);
+        if (uid == null || !CloudConfig.isAvailable(ctx)) {
+            done.run();
+            return;
+        }
+        Context app = ctx.getApplicationContext();
+        android.os.Handler main = new android.os.Handler(android.os.Looper.getMainLooper());
+        boolean[] finished = {false};
+        Runnable finish = () -> {
+            if (finished[0]) return;
+            finished[0] = true;
+            done.run();
+        };
+        main.postDelayed(finish, PROFILE_TIMEOUT_MS);
+        userDoc(uid).get().addOnCompleteListener(t -> {
+            if (t.isSuccessful() && t.getResult() != null && t.getResult().exists()) {
+                try {
+                    applyProfileData(app, data(t.getResult()));
+                } catch (RuntimeException e) {
+                    AppLog.e("Perfil da nuvem inválido", e);
+                }
+            }
+            main.post(finish);
+        });
+    }
+
+    private static final long PROFILE_TIMEOUT_MS = 8_000;
 
     /** Envia o perfil para usuarios/{uid} se a sessão for da nuvem; senão não faz nada. */
     public static void pushProfile(Context ctx, UserProfile p) {

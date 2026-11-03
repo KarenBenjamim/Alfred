@@ -21,6 +21,7 @@ import com.alfred.agenda.R;
 import com.alfred.agenda.account.AccountStore;
 import com.alfred.agenda.cloud.CloudAuth;
 import com.alfred.agenda.cloud.CloudConfig;
+import com.alfred.agenda.data.CloudSync;
 import com.alfred.agenda.util.Honorific;
 import com.alfred.agenda.util.UiUtils;
 import com.google.android.material.button.MaterialButton;
@@ -270,6 +271,10 @@ public class LoginFragment extends Fragment {
                 boolean fresh = meta != null
                         && Math.abs(meta.getLastSignInTimestamp() - meta.getCreationTimestamp()) < 5_000;
                 AccountStore.linkCloudUser(requireContext(), user.getUid(), user.getEmail(), newAccount || fresh);
+                // Perfil da nuvem primeiro: quem já tem conta não refaz o onboarding num aparelho novo
+                setBusy(true);
+                CloudSync.fetchProfile(requireContext(), () -> onResult(0));
+                return;
             }
         }
         onResult(errorRes);
