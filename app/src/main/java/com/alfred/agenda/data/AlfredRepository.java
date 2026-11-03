@@ -1,6 +1,7 @@
 package com.alfred.agenda.data;
 
 import android.content.Context;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 
@@ -36,7 +37,11 @@ import com.alfred.agenda.util.MealGroups;
 import com.alfred.agenda.util.StudyTime;
 import com.alfred.agenda.util.WaterGoal;
 
+import org.json.JSONException;
+
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -598,6 +603,27 @@ public class AlfredRepository {
                 scheduler.cancel(AlarmScheduler.TYPE_TASK, t.id);
             }
             main.post(() -> onDone.accept(tasks.size()));
+        });
+    }
+
+    // ===================== Backup local =====================
+
+    /**
+     * Grava o backup completo da conta (LocalBackup) no arquivo escolhido pela usuária.
+     * onSuccess/onError rodam na thread principal.
+     */
+    public void exportBackup(Uri target, @Nullable String appVersion, Runnable onSuccess, Runnable onError) {
+        runIo(() -> {
+            try (OutputStream out = app.getContentResolver().openOutputStream(target, "wt")) {
+                if (out == null) throw new IOException("Destino indisponível");
+                byte[] json = LocalBackup.build(app, db, appVersion).toString(2).getBytes(StandardCharsets.UTF_8);
+                out.write(json);
+            } catch (IOException | JSONException | RuntimeException e) {
+                AppLog.e("Falha ao exportar o backup", e);
+                main.post(onError);
+                return;
+            }
+            main.post(onSuccess);
         });
     }
 

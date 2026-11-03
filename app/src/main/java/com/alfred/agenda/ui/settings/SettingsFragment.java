@@ -14,6 +14,8 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
@@ -23,12 +25,15 @@ import com.alfred.agenda.MainActivity;
 import com.alfred.agenda.R;
 import com.alfred.agenda.util.Honorific;
 import com.alfred.agenda.data.AlfredRepository;
+import com.alfred.agenda.data.LocalBackup;
 import com.alfred.agenda.data.NutritionPlan;
 import com.alfred.agenda.notifications.AlarmScheduler;
 import com.alfred.agenda.notifications.NotificationHelper;
 import com.alfred.agenda.util.ThemePrefs;
 import com.alfred.agenda.util.UiUtils;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+
+import java.time.LocalDate;
 
 /**
  * Configurações (abertas pelo Perfil). Só mostra o que existe de verdade no app:
@@ -38,6 +43,16 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 public class SettingsFragment extends Fragment {
 
     private LinearLayout prefs;
+
+    /** "Salvar como" do sistema: a usuária escolhe onde guardar o backup (sem pedir permissão). */
+    private final ActivityResultLauncher<String> saveBackup =
+            registerForActivityResult(new ActivityResultContracts.CreateDocument("application/json"), uri -> {
+                if (uri == null || !isAdded()) return; // cancelou
+                MainActivity activity = (MainActivity) requireActivity();
+                AlfredRepository.get(requireContext()).exportBackup(uri, appVersion(),
+                        () -> activity.showMessage(Honorific.str(activity, R.string.backup_done)),
+                        () -> activity.showMessage(Honorific.str(activity, R.string.backup_failed)));
+            });
 
     @Nullable
     @Override
@@ -55,6 +70,8 @@ public class SettingsFragment extends Fragment {
         AlfredRepository repo = AlfredRepository.get(requireContext());
 
         // Dados
+        addRow(data, R.drawable.ic_download, getString(R.string.settings_backup),
+                getString(R.string.settings_backup_desc), this::confirmBackup);
         addRow(data, R.drawable.ic_storage, getString(R.string.settings_purge),
                 getString(R.string.settings_purge_value), null);
         addRow(data, R.drawable.ic_upload, getString(R.string.settings_import_plan),
@@ -127,15 +144,29 @@ public class SettingsFragment extends Fragment {
                 .show();
     }
 
-    private void showAbout() {
-        String version = "";
+    /** Avisa que o arquivo sai sem cifra e abre o "Salvar como". */
+    private void confirmBackup() {
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.settings_backup)
+                .setMessage(Honorific.str(requireContext(), R.string.backup_warning))
+                .setNegativeButton(R.string.cancel, null)
+                .setPositiveButton(R.string.backup_choose, (d, w) -> saveBackup.launch(
+                        LocalBackup.suggestedFileName(requireContext(), LocalDate.now().toString())))
+                .show();
+    }
+
+    private String appVersion() {
         try {
             PackageInfo info = requireContext().getPackageManager()
                     .getPackageInfo(requireContext().getPackageName(), 0);
-            version = info.versionName;
+            return info.versionName;
         } catch (PackageManager.NameNotFoundException ignored) {
-            // sem versão, mostra o resto
+            return ""; // sem versão, mostra o resto
         }
+    }
+
+    private void showAbout() {
+        String version = appVersion();
         String plan = NutritionPlan.get(requireContext()).source;
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.settings_about)

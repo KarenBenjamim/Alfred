@@ -185,6 +185,12 @@
     <string name="settings_sync">Sincronização</string>
     <string name="settings_sync_value">Não disponível · dados locais</string>
     <string name="settings_section_data">Dados</string>
+    <string name="settings_backup">Exportar backup dos dados</string>
+    <string name="settings_backup_desc">Salva tudo desta conta num arquivo .json</string>
+    <string name="backup_warning">O arquivo terá todos os seus dados (tarefas, dieta, hábitos, estudos, peso) SEM criptografia, {voc}. Guarde-o num lugar seguro.</string>
+    <string name="backup_choose">Escolher onde salvar</string>
+    <string name="backup_done">Backup salvo, {voc}. Seus dados estão a salvo.</string>
+    <string name="backup_failed">Não consegui salvar o backup, {voc}. Tente outro local.</string>
     <string name="settings_purge">Expurgo automático</string>
     <string name="settings_purge_value">Apaga registros com mais de 2 anos ao abrir o app</string>
     <string name="settings_import_plan">Importar planilha da dieta</string>

@@ -254,7 +254,8 @@ public final class NutritionPlan {
 
     // ---------------- JSON ----------------
 
-    private JSONObject toJson() throws JSONException {
+    /** Plano em JSON (o mesmo formato do arquivo, antes da cifra). Também vai no backup local. */
+    JSONObject toJson() throws JSONException {
         JSONObject root = new JSONObject();
         root.put("source", source);
         root.put("importedAt", importedAt);
