@@ -2,6 +2,12 @@ plugins {
     id 'com.android.application'
 }
 
+// Firebase: o google-services.json vem do console do Firebase e NÃO vai para o git
+// (ver .gitignore). Sem ele, o app compila e funciona só com os dados locais, como antes.
+if (file('google-services.json').exists()) {
+    apply plugin: 'com.google.gms.google-services'
+}
+
 android {
     namespace = 'com.alfred.agenda'
     compileSdk = 37
@@ -35,6 +41,16 @@ dependencies {
     // Room (SQLite local). Em Java, o annotationProcessor gera o código dos DAOs na compilação.
     implementation 'androidx.room:room-runtime:2.8.5'
     annotationProcessor 'androidx.room:room-compiler:2.8.5'
+
+    // Firebase (plano gratuito Spark): login e banco na nuvem com cache offline.
+    // O BoM fixa versões compatíveis entre si.
+    implementation platform('com.google.firebase:firebase-bom:35.1.0')
+    implementation 'com.google.firebase:firebase-auth'
+    implementation 'com.google.firebase:firebase-firestore'
+    // Login com Google pelo Credential Manager (substitui o antigo GoogleSignIn)
+    implementation 'androidx.credentials:credentials:1.6.0'
+    implementation 'androidx.credentials:credentials-play-services-auth:1.6.0'
+    implementation 'com.google.android.libraries.identity.googleid:googleid:1.2.1'
 
     // Testes unitários das regras puras (cores das tags, progresso do dia, cronômetro...)
     testImplementation 'junit:junit:4.13.2'

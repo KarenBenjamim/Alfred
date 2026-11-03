@@ -2,6 +2,7 @@ package com.alfred.agenda;
 
 import android.app.Application;
 
+import com.alfred.agenda.cloud.CloudConfig;
 import com.alfred.agenda.notifications.NotificationHelper;
 import com.alfred.agenda.util.AppLog;
 import com.alfred.agenda.util.ThemePrefs;
@@ -15,6 +16,8 @@ public class AlfredApp extends Application {
         AppLog.init(this);
         // Aparência escolhida (escuro, claro ou sistema) antes da primeira tela
         ThemePrefs.apply(this);
+        // Firebase real, emuladores locais (desenvolvimento) ou nenhum
+        CloudConfig.init(this);
         // Os canais precisam existir antes da primeira notificação
         NotificationHelper.createChannels(this);
     }

@@ -1,4 +1,6 @@
-// Build raiz: apenas declara o plugin Android, que é aplicado no módulo :app.
+// Build raiz: apenas declara os plugins, que são aplicados no módulo :app.
 plugins {
     id 'com.android.application' version '9.4.1' apply false
+    // Lê app/google-services.json (baixado do console do Firebase)
+    id 'com.google.gms.google-services' version '4.5.0' apply false
 }
