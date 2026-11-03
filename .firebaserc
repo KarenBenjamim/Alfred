@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "demo-alfred"
-  }
+    "default": "alfred-mykai"
+  },
+  "targets": {},
+  "etags": {}
 }

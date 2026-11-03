@@ -41,6 +41,7 @@ public class CloudAuthTest {
     public void knownErrorsHaveTheirMessagesAndUnknownIsGeneric() {
         assertEquals(R.string.auth_error_email_taken, CloudAuth.messageFor("ERROR_EMAIL_ALREADY_IN_USE"));
         assertEquals(R.string.auth_error_cloud_password, CloudAuth.messageFor("ERROR_WEAK_PASSWORD"));
+        assertEquals(R.string.auth_error_method_off, CloudAuth.messageFor("ERROR_OPERATION_NOT_ALLOWED"));
         assertEquals(R.string.auth_error_generic, CloudAuth.messageFor("ERROR_ALGO_NOVO"));
         assertEquals(R.string.auth_error_generic, CloudAuth.messageFor((String) null));
     }

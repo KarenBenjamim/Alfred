@@ -88,6 +88,7 @@ const AUTH_ERRORS = {
   'auth/network-request-failed': 'Sem conexão. Verifique a internet e tente de novo.',
   'auth/user-disabled': 'Esta conta foi desativada.',
   'auth/account-exists-with-different-credential': 'Este e-mail já entra por outro método (Google ou senha).',
+  'auth/operation-not-allowed': 'Este jeito de entrar não está ativado no projeto. Use outro ou ative no console do Firebase.',
   'auth/popup-closed-by-user': '',
   'auth/cancelled-popup-request': '',
 };

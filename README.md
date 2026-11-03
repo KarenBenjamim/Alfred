@@ -153,7 +153,7 @@ O **Firestore** é a fonte da verdade e cada usuário só acessa `usuarios/{uid}
 | `rules-tests/` | Testes das regras, rodando no emulador |
 | `firebase.json`, `.firebaserc` | Hosting, regras e emuladores |
 | `app/google-services.json` | Configuração do app Android (do console; **fora do git**) |
-| `web/js/firebase-config.js` | Configuração da web (do console; **fora do git**; modelo em `firebase-config.example.js`) |
+| `web/js/firebase-config.js` | Opcional: no Firebase Hosting a web lê a configuração de `/__/firebase/init.json` sozinha. Só é preciso para servir a web em outro lugar (**fora do git**; modelo em `firebase-config.example.js`) |
 
 ### Passos no console do Firebase (uma vez)
 
@@ -165,7 +165,7 @@ O **Firestore** é a fonte da verdade e cada usuário só acessa `usuarios/{uid}
    keytool -list -v -keystore %USERPROFILE%\.android\debug.keystore -alias androiddebugkey -storepass android -keypass android
    ```
    Baixe o `google-services.json` e coloque em `app/`. Recompile: o plugin só é aplicado quando o arquivo existe.
-5. **Seus apps → Web** (`</>`): registre o app e copie o objeto de configuração para `web/js/firebase-config.js` (use `firebase-config.example.js` como modelo).
+5. **Seus apps → Web** (`</>`): registre o app. Não é preciso copiar a configuração: publicada no Firebase Hosting, a web a lê sozinha.
 
 ### Publicar regras e site
 
@@ -184,12 +184,12 @@ O site fica em `https://SEU-PROJETO.web.app`. Esse domínio já vem autorizado p
 Sem os arquivos de configuração, a versão de desenvolvimento do app e a web em `localhost` usam os **emuladores locais** (projeto `demo-alfred`, que não existe na nuvem):
 
 ```
-firebase emulators:start --only auth,firestore,hosting
+firebase emulators:start --only auth,firestore,hosting --project demo-alfred
 ```
 
 - Web: http://127.0.0.1:5000 · painel dos emuladores: http://127.0.0.1:4000
 - App: instale a versão de desenvolvimento no emulador Android; ele se conecta ao PC por `10.0.2.2`.
-- Testes das regras: `firebase emulators:exec --only firestore "npm --prefix rules-tests test"` (rode `npm install` em `rules-tests/` uma vez).
+- Testes das regras: `firebase emulators:exec --only firestore --project demo-alfred "npm --prefix rules-tests test"` (rode `npm install` em `rules-tests/` uma vez).
 
 ### Backup e migração das contas antigas
 

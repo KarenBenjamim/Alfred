@@ -84,6 +84,7 @@ public final class CloudAuth {
             case "ERROR_WEAK_PASSWORD": return R.string.auth_error_cloud_password;
             case "ERROR_USER_DISABLED": return R.string.auth_error_disabled;
             case "ERROR_ACCOUNT_EXISTS_WITH_DIFFERENT_CREDENTIAL": return R.string.auth_error_other_method;
+            case "ERROR_OPERATION_NOT_ALLOWED": return R.string.auth_error_method_off;
             default: return R.string.auth_error_generic;
         }
     }
