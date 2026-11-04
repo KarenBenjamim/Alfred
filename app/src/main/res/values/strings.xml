@@ -238,8 +238,6 @@
     <string name="settings_purge_value">Apaga registros com mais de 2 anos ao abrir o app</string>
     <string name="settings_import_plan">Importar planilha da dieta</string>
     <string name="settings_import_plan_desc">Substitui o plano alimentar pelo de uma nova planilha (.xlsx)</string>
-    <string name="settings_test_create">Criar tarefas de teste</string>
-    <string name="settings_test_remove">Remover tarefas de teste</string>
     <string name="settings_section_about">Sobre</string>
     <string name="settings_about">Sobre o Alfred</string>
     <string name="settings_about_msg">Alfred %1$s\n\nAgenda pessoal inspirada no mordomo do Batman. As contas são locais: tudo fica salvo neste celular, e cada conta vê só os próprios dados.\n\nPlano alimentar: %2$s.</string>
@@ -567,11 +565,6 @@
     <plurals name="purge_done">
         <item quantity="one">Expurgo concluído, {voc}: %d registro com mais de 2 anos foi removido. Ninguém sentirá falta.</item>
         <item quantity="other">Expurgo concluído, {voc}: %d registros com mais de 2 anos foram removidos. Ninguém sentirá falta.</item>
-    </plurals>
-    <string name="test_created">Tarefas de teste criadas, {voc}. Confira Trabalho, Pessoal e Início.</string>
-    <plurals name="test_removed">
-        <item quantity="one">%d tarefa de teste removida.</item>
-        <item quantity="other">%d tarefas de teste removidas.</item>
     </plurals>
 
     <!-- Permissões -->

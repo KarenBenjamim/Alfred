@@ -72,8 +72,8 @@ public class SettingsFragment extends Fragment {
                 Runnable ok = () -> activity.showMessage(Honorific.str(activity, R.string.backup_done));
                 Runnable fail = () -> activity.showMessage(Honorific.str(activity, R.string.backup_failed));
                 AlfredRepository repo = AlfredRepository.get(requireContext());
-                if (legacy == null) repo.exportBackup(uri, appVersion(), ok, fail);
-                else repo.exportLegacyBackup(uri, legacy.id, legacy.username, appVersion(), ok, fail);
+                if (legacy == null) repo.backup().exportBackup(uri, appVersion(), ok, fail);
+                else repo.backup().exportLegacyBackup(uri, legacy.id, legacy.username, appVersion(), ok, fail);
             });
 
     @Nullable
@@ -110,17 +110,6 @@ public class SettingsFragment extends Fragment {
         addRow(data, R.drawable.ic_upload, getString(R.string.settings_import_plan),
                 getString(R.string.settings_import_plan_desc),
                 () -> activity.openTab(MainActivity.TAB_DIET, MainActivity.ACTION_IMPORT_PLAN));
-        if (activity.isDebugBuild()) {
-            addRow(data, R.drawable.ic_task, getString(R.string.settings_test_create), null,
-                    () -> repo.insertTestTasks(() -> {
-                        if (isAdded()) activity.showMessage(Honorific.str(requireContext(), R.string.test_created));
-                    }));
-            addRow(data, R.drawable.ic_delete, getString(R.string.settings_test_remove), null,
-                    () -> repo.removeTestTasks(count -> {
-                        if (isAdded()) activity.showMessage(
-                                getResources().getQuantityString(R.plurals.test_removed, count, count));
-                    }));
-        }
 
         // Sobre
         addRow(about, R.drawable.ic_info, getString(R.string.settings_about), null, this::showAbout);
@@ -212,17 +201,16 @@ public class SettingsFragment extends Fragment {
 
     /** Pede a senha da conta antiga (prova que é dela) e oferece o backup antes de enviar. */
     private void confirmMigration(AccountStore.LegacyAccount account) {
-        View view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_text_input, null);
-        TextInputLayout layout = view.findViewById(R.id.layout_text);
-        EditText input = view.findViewById(R.id.input_text);
-        layout.setHint(R.string.migration_password);
+        UiUtils.TextField field = UiUtils.textField(requireContext(), R.string.migration_password);
+        TextInputLayout layout = field.layout;
+        EditText input = field.input;
         layout.setEndIconMode(TextInputLayout.END_ICON_PASSWORD_TOGGLE);
         input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
 
         AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(getString(R.string.migration_title, account.username))
                 .setMessage(Honorific.str(requireContext(), R.string.migration_msg, account.username))
-                .setView(view)
+                .setView(field.view)
                 .setNeutralButton(R.string.migration_backup_first, (d, w) -> {
                     backupOfLegacy = account;
                     saveBackup.launch(LocalBackup.suggestedFileName(account.username, LocalDate.now().toString()));
@@ -231,7 +219,7 @@ public class SettingsFragment extends Fragment {
                 .setPositiveButton(R.string.migration_send, null) // validado abaixo
                 .show();
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(b -> {
-            String password = input.getText() == null ? "" : input.getText().toString();
+            String password = input.getText() == null ? "" : input.getText().toString(); // sem trim: espaço conta
             if (password.isEmpty()) {
                 layout.setError(getString(R.string.auth_error_required));
                 return;
@@ -262,7 +250,7 @@ public class SettingsFragment extends Fragment {
                 .setCancelable(false)
                 .show();
         MainActivity activity = (MainActivity) requireActivity();
-        AlfredRepository.get(requireContext()).importBackupFile(uri, (result, errorRes) -> {
+        AlfredRepository.get(requireContext()).backup().importBackupFile(uri, (result, errorRes) -> {
             wait.dismiss();
             if (result != null) {
                 activity.showMessage(Honorific.str(activity, R.string.migration_done, result.tasks,
@@ -281,7 +269,7 @@ public class SettingsFragment extends Fragment {
                 .setCancelable(false)
                 .show();
         MainActivity activity = (MainActivity) requireActivity();
-        AlfredRepository.get(requireContext()).migrateLegacyAccount(account.id, password, appVersion(),
+        AlfredRepository.get(requireContext()).backup().migrateLegacyAccount(account.id, password, appVersion(),
                 (result, errorRes) -> {
                     wait.dismiss();
                     if (result != null) {

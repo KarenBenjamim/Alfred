@@ -5,6 +5,7 @@ import android.text.Editable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
@@ -65,21 +66,38 @@ public final class UiUtils {
                 .show();
     }
 
+    /** Campo de texto dos diálogos (layout dialog_text_input), já com a dica. */
+    public static final class TextField {
+        public final View view;
+        public final TextInputLayout layout;
+        public final EditText input;
+
+        TextField(Context ctx, int hintRes) {
+            view = LayoutInflater.from(ctx).inflate(R.layout.dialog_text_input, new FrameLayout(ctx), false);
+            layout = view.findViewById(R.id.layout_text);
+            input = view.findViewById(R.id.input_text);
+            layout.setHint(hintRes);
+        }
+    }
+
+    public static TextField textField(Context ctx, int hintRes) {
+        return new TextField(ctx, hintRes);
+    }
+
     /**
      * Pede um texto (ex.: nome de um tema). Com onDelete != null, mostra também "Excluir".
      * O "Salvar" só fecha se o campo não estiver vazio.
      */
     public static void promptText(Context ctx, int titleRes, int hintRes, String initial,
                                   Consumer<String> onSave, @Nullable Runnable onDelete) {
-        View view = LayoutInflater.from(ctx).inflate(R.layout.dialog_text_input, null);
-        TextInputLayout layout = view.findViewById(R.id.layout_text);
-        EditText input = view.findViewById(R.id.input_text);
-        layout.setHint(hintRes);
+        TextField field = textField(ctx, hintRes);
+        TextInputLayout layout = field.layout;
+        EditText input = field.input;
         input.setText(initial);
 
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(ctx)
                 .setTitle(titleRes)
-                .setView(view)
+                .setView(field.view)
                 .setNegativeButton(R.string.cancel, null)
                 .setPositiveButton(R.string.save, null);
         if (onDelete != null) builder.setNeutralButton(R.string.delete, (d, w) -> onDelete.run());

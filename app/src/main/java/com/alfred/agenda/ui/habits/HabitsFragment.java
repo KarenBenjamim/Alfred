@@ -167,16 +167,15 @@ public class HabitsFragment extends Fragment {
 
     /** Corrige o total de hoje (ex.: registrou a mais por engano). */
     private void adjustWater() {
-        View content = getLayoutInflater().inflate(R.layout.dialog_text_input, null);
-        TextInputLayout layout = content.findViewById(R.id.layout_text);
-        EditText input = content.findViewById(R.id.input_text);
-        layout.setHint(R.string.water_adjust_hint);
+        UiUtils.TextField field = UiUtils.textField(requireContext(), R.string.water_adjust_hint);
+        TextInputLayout layout = field.layout;
+        EditText input = field.input;
         layout.setSuffixText(getString(R.string.unit_ml));
         input.setInputType(InputType.TYPE_CLASS_NUMBER);
         input.setText(String.valueOf(waterMl));
         AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.water_adjust_title)
-                .setView(content)
+                .setView(field.view)
                 .setNegativeButton(R.string.cancel, null)
                 .setPositiveButton(R.string.save, null)
                 .show();

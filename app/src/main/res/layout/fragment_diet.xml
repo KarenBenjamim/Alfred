@@ -122,7 +122,7 @@
                     app:singleLine="true" />
             </HorizontalScrollView>
 
-            <!-- ErrorState: o plano embutido não pôde ser lido -->
+            <!-- ErrorState: o plano salvo neste celular não pôde ser lido -->
             <include
                 android:id="@+id/plan_error"
                 layout="@layout/view_empty_state" />

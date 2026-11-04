@@ -59,15 +59,9 @@ public interface TaskDao {
     @Delete
     void delete(Task task);
 
-    // ---- Expurgo e dados de teste ----
+    // ---- Expurgo ----
 
     /** Apaga tarefas com entrega antes de :limitDay. Devolve quantas foram apagadas. */
     @Query("DELETE FROM tasks WHERE dueEpochDay < :limitDay")
     int deleteOlderThan(long limitDay);
-
-    @Query("SELECT * FROM tasks WHERE title LIKE :prefix || '%'")
-    List<Task> getByTitlePrefix(String prefix);
-
-    @Insert
-    List<Long> insertAll(List<Task> tasks);
 }

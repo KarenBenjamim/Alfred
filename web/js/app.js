@@ -879,22 +879,23 @@ const doneOption = (g, t) => g.options.find((o) => o.feitas.includes(t)) || null
 /** Onde fica o "o que comi": a opção feita, a que já tem texto ou a 1ª. */
 const eatenTarget = (g, t) => doneOption(g, t) || g.options.find((o) => o.comido[t]) || g.options[0];
 
-/** Marca a opção do dia e desmarca as outras do horário; o "o que comi" vem junto. */
-function chooseOption(g, option, t) {
-  const eaten = eatenTarget(g, t).comido[t] || '';
+/**
+ * Grava o dia da refeição numa vez só: a opção escolhida fica feita (com o "o que comi",
+ * vazio apaga o texto) e as outras opções do horário são desmarcadas. option = null desmarca tudo.
+ */
+function setMealDay(g, t, option, eaten = '') {
   const batch = writeBatch(db);
   for (const o of g.options) {
-    if (o !== option) batch.set(ref(S.COL.MEALS, o.id), { feitas: arrayRemove(t), comido: { [t]: deleteField() } }, { merge: true });
+    const data = o === option ? { feitas: arrayUnion(t), comido: { [t]: eaten || deleteField() } }
+      : { feitas: arrayRemove(t), comido: { [t]: deleteField() } };
+    batch.set(ref(S.COL.MEALS, o.id), data, { merge: true });
   }
-  batch.set(ref(S.COL.MEALS, option.id), { feitas: arrayUnion(t), comido: { [t]: eaten || deleteField() } }, { merge: true });
   write(batch.commit());
 }
 
-function clearDay(g, t) {
-  const batch = writeBatch(db);
-  for (const o of g.options) batch.set(ref(S.COL.MEALS, o.id), { feitas: arrayRemove(t), comido: { [t]: deleteField() } }, { merge: true });
-  write(batch.commit());
-}
+/** Escolher outra opção leva junto o "o que comi" já registrado. */
+const chooseOption = (g, option, t) => setMealDay(g, t, option, eatenTarget(g, t).comido[t] || '');
+const clearDay = (g, t) => setMealDay(g, t, null);
 
 /** Fechado: horário, nome e "feita hoje". Aberto: as opções (qual foi feita, alimentos), "O que comi". */
 function mealCard(g, t) {
@@ -941,13 +942,7 @@ function eatenForm(g, target, t, eaten) {
   return h('div', {},
     h('label', {}, 'O que comi de verdade'), box,
     h('div', { class: 'actions' }, h('button', { class: 'secondary', onclick: () => {
-      const text = box.value.trim();
-      const batch = writeBatch(db);
-      for (const o of g.options) {
-        if (o !== target) batch.set(ref(S.COL.MEALS, o.id), { feitas: arrayRemove(t), comido: { [t]: deleteField() } }, { merge: true });
-      }
-      batch.set(ref(S.COL.MEALS, target.id), { feitas: arrayUnion(t), comido: { [t]: text || deleteField() } }, { merge: true });
-      write(batch.commit());
+      setMealDay(g, t, target, box.value.trim());
       toast(voc('Anotado, {voc}.'));
     } }, 'Salvar o que comi')));
 }

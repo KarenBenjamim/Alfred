@@ -4,7 +4,6 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.time.format.TextStyle;
 import java.time.temporal.TemporalAdjusters;
 import java.util.Locale;
 
@@ -57,11 +56,6 @@ public final class DateUtils {
     /** "Sexta-feira, 24 de outubro". */
     public static String formatLongDay(LocalDate date) {
         return capitalize(date.format(LONG_DAY));
-    }
-
-    /** "Segunda-feira" a partir de 1..7. */
-    public static String dayOfWeekName(int dayOfWeek) {
-        return capitalize(DayOfWeek.of(dayOfWeek).getDisplayName(TextStyle.FULL, PT_BR));
     }
 
     /** Cronômetro: 3725 s -> "01:02:05". */

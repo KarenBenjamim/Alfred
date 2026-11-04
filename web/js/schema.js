@@ -51,7 +51,7 @@ export const STUDY_COLORS = [
   ['Terracota', '#A35F3E'], ['Ameixa', '#6C4C8A'], ['Rosa antigo', '#9A5A73'], ['Ardósia', '#5B6577'],
 ];
 
-export const DEFAULT_ML_PER_KG = 35;
+const DEFAULT_ML_PER_KG = 35;
 export const MAX_DAY_ML = 20000;
 
 // ---------------- Ids e datas ----------------
@@ -162,7 +162,7 @@ const num = (v, f = 0) => (typeof v === 'number' && Number.isFinite(v) ? v : f);
 const bool = (v, f = false) => (typeof v === 'boolean' ? v : f);
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.trunc(v)));
 
-export function days(raw) {
+function days(raw) {
   return Array.isArray(raw) ? [...new Set(raw.filter((d) => parseDay(d)))] : [];
 }
 
@@ -300,7 +300,7 @@ export function readSubject(id, d) {
 const TITLES = ['senhor', 'senhora', 'senhorita'];
 const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : s);
 
-export function vocative(form, name) {
+function vocative(form, name) {
   return form >= 0 && form < 3 ? TITLES[form] : (name || '').trim();
 }
 

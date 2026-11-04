@@ -15,7 +15,6 @@ import android.text.InputType;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -45,7 +44,6 @@ import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
-import com.google.android.material.textfield.TextInputLayout;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -65,6 +63,8 @@ import java.util.concurrent.Executors;
 public class DietFragment extends Fragment {
 
     private static final String PREFS = "alfred_prefs";
+    /** Tamanho máximo do "o que comi" (o mesmo da web). */
+    private static final int MAX_EATEN = 500;
 
     private DietViewModel viewModel;
     private final ExecutorService files = Executors.newSingleThreadExecutor();
@@ -141,28 +141,9 @@ public class DietFragment extends Fragment {
 
             @Override
             public void onDoneChanged(MealGroups.Group group, boolean done) {
-                if (!done) {
-                    // Desmarcar a refeição desmarca todas as opções feitas hoje
-                    for (MealWithItems o : group.options) viewModel.setDone(o.meal.id, false, null);
-                } else if (group.options.size() == 1) {
-                    choose(group, group.options.get(0));
-                } else {
-                    // Várias opções: pergunta qual foi (cancelar desfaz a marcação)
-                    CharSequence[] labels = new CharSequence[group.options.size()];
-                    for (int i = 0; i < labels.length; i++) labels[i] = MealGroups.optionLabel(group.options.get(i).meal.name);
-                    boolean[] picked = {false};
-                    new MaterialAlertDialogBuilder(requireContext())
-                            .setTitle(Honorific.str(requireContext(), R.string.meal_option_pick_title))
-                            .setItems(labels, (d, which) -> {
-                                picked[0] = true;
-                                choose(group, group.options.get(which));
-                            })
-                            .setNegativeButton(R.string.cancel, null)
-                            .setOnDismissListener(d -> {
-                                if (!picked[0]) adapter.notifyDataSetChanged();
-                            })
-                            .show();
-                }
+                if (!done) clearDay(group);
+                else if (group.options.size() == 1) choose(group, group.options.get(0));
+                else askWhichOption(group);
             }
 
             @Override
@@ -177,24 +158,7 @@ public class DietFragment extends Fragment {
 
             @Override
             public void onEaten(MealGroups.Group group, MealWithItems meal, String current) {
-                // Texto livre, até 500 caracteres; salvar marca a refeição como feita hoje
-                View box = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_text_input, null);
-                TextInputLayout layout = box.findViewById(R.id.layout_text);
-                EditText input = box.findViewById(R.id.input_text);
-                layout.setHint(R.string.meal_eaten_hint);
-                input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
-                        | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
-                input.setFilters(new InputFilter[]{new InputFilter.LengthFilter(500)});
-                input.setText(current);
-                new MaterialAlertDialogBuilder(requireContext())
-                        .setTitle(getString(R.string.meal_eaten_title) + " · " + MealGroups.baseName(meal.meal.name))
-                        .setView(box)
-                        .setNegativeButton(R.string.cancel, null)
-                        .setPositiveButton(R.string.save, (d, w) -> viewModel.setEaten(meal.meal.id, UiUtils.text(input), () -> {
-                            if (isAdded()) ((MainActivity) requireActivity())
-                                    .showMessage(Honorific.str(requireContext(), R.string.meal_eaten_saved));
-                        }))
-                        .show();
+                editEaten(meal, current);
             }
         });
         list.setAdapter(adapter);
@@ -204,9 +168,7 @@ public class DietFragment extends Fragment {
             adapter.setMeals(meals);
             renderPlan(NutritionPlan.get(requireContext()));
         });
-        viewModel.logsToday.observe(getViewLifecycleOwner(), logs -> {
-            adapter.setLogs(logs);
-        });
+        viewModel.logsToday.observe(getViewLifecycleOwner(), adapter::setLogs);
         viewModel.importing().observe(getViewLifecycleOwner(), busy ->
                 importProgress.setVisibility(Boolean.TRUE.equals(busy) ? View.VISIBLE : View.GONE));
         viewModel.importResult().observe(getViewLifecycleOwner(), result -> {
@@ -227,6 +189,47 @@ public class DietFragment extends Fragment {
         } else if (savedInstanceState == null && !plan.isImported()) {
             askImportOnce();
         }
+    }
+
+    /** Desmarcar a refeição desmarca todas as opções feitas hoje. */
+    private void clearDay(MealGroups.Group group) {
+        for (MealWithItems o : group.options) viewModel.setDone(o.meal.id, false, null);
+    }
+
+    /** Várias opções: pergunta qual foi feita (cancelar desfaz a marcação da caixa). */
+    private void askWhichOption(MealGroups.Group group) {
+        CharSequence[] labels = new CharSequence[group.options.size()];
+        for (int i = 0; i < labels.length; i++) labels[i] = MealGroups.optionLabel(group.options.get(i).meal.name);
+        boolean[] picked = {false};
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(Honorific.str(requireContext(), R.string.meal_option_pick_title))
+                .setItems(labels, (d, which) -> {
+                    picked[0] = true;
+                    choose(group, group.options.get(which));
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .setOnDismissListener(d -> {
+                    if (!picked[0]) adapter.notifyDataSetChanged();
+                })
+                .show();
+    }
+
+    /** "O que comi de verdade": texto livre (até 500); salvar marca a refeição como feita hoje. */
+    private void editEaten(MealWithItems meal, String current) {
+        UiUtils.TextField field = UiUtils.textField(requireContext(), R.string.meal_eaten_hint);
+        field.input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+                | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        field.input.setFilters(new InputFilter[]{new InputFilter.LengthFilter(MAX_EATEN)});
+        field.input.setText(current);
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(getString(R.string.meal_eaten_title) + " · " + MealGroups.baseName(meal.meal.name))
+                .setView(field.view)
+                .setNegativeButton(R.string.cancel, null)
+                .setPositiveButton(R.string.save, (d, w) -> viewModel.setEaten(meal.meal.id, UiUtils.text(field.input), () -> {
+                    if (isAdded()) ((MainActivity) requireActivity())
+                            .showMessage(Honorific.str(requireContext(), R.string.meal_eaten_saved));
+                }))
+                .show();
     }
 
     /**

@@ -3,7 +3,6 @@ package com.alfred.agenda;
 import android.Manifest;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.ApplicationInfo;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.net.Uri;
@@ -401,11 +400,6 @@ public class MainActivity extends AppCompatActivity {
     public void celebrateGoal() {
         AlfredRepository.get(this).computeTodayProgress(progress ->
                 showMessage(progress.allDone() ? AlfredMessages.allGoalsDone(this) : AlfredMessages.goalDone(this)));
-    }
-
-    /** true na versão de desenvolvimento (instalada com gradlew installDebug). */
-    public boolean isDebugBuild() {
-        return (getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
     }
 
     // ---------------- Permissões ----------------
