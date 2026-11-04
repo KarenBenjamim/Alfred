@@ -32,6 +32,23 @@ import java.util.List;
 @Dao
 public interface SyncDao {
 
+    /** Uma marcação por dia de algum pai (hábito, refeição ou assunto). */
+    class ParentDay {
+        public long parentId;
+        public long epochDay;
+    }
+
+    // ---- Dias antigos (expurgo também na nuvem) ----
+
+    @Query("SELECT habitId AS parentId, epochDay FROM habit_logs WHERE epochDay < :limitDay")
+    List<ParentDay> habitDaysOlderThan(long limitDay);
+
+    @Query("SELECT mealId AS parentId, epochDay FROM meal_logs WHERE epochDay < :limitDay")
+    List<ParentDay> mealDaysOlderThan(long limitDay);
+
+    @Query("SELECT subjectId AS parentId, epochDay FROM study_logs WHERE epochDay < :limitDay")
+    List<ParentDay> studyDaysOlderThan(long limitDay);
+
     // ---- Tarefas e tags ----
 
     @Upsert
@@ -99,8 +116,6 @@ public interface SyncDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     void insertMealLogs(List<MealLog> logs);
 
-    @Query("SELECT epochDay FROM meal_logs WHERE mealId = :mealId")
-    List<Long> mealDoneDays(long mealId);
 
     // ---- Hábitos e água ----
 
@@ -122,14 +137,15 @@ public interface SyncDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     void insertHabitLogs(List<HabitLog> logs);
 
-    @Query("SELECT epochDay FROM habit_logs WHERE habitId = :habitId")
-    List<Long> habitDoneDays(long habitId);
 
     @Query("DELETE FROM water_logs")
     void clearWater();
 
     @Upsert
     void upsertWater(List<WaterLog> logs);
+
+    @Query("SELECT * FROM water_logs")
+    List<WaterLog> allWater();
 
     @Query("SELECT epochDay FROM water_logs WHERE epochDay < :limitDay")
     List<Long> waterDaysOlderThan(long limitDay);
@@ -184,6 +200,4 @@ public interface SyncDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     void insertStudyLogs(List<StudyLog> logs);
 
-    @Query("SELECT * FROM study_logs WHERE subjectId = :subjectId")
-    List<StudyLog> logsOf(long subjectId);
 }

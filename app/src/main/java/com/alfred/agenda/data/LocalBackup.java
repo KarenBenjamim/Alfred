@@ -67,7 +67,7 @@ public final class LocalBackup {
         root.put("perfil", new JSONObject()
                 .put("nome", p.name)
                 .put("tratamento", p.form)
-                .put("pesoKg", (double) p.weightKg)
+                .put("pesoKg", p.weightKgExact())
                 .put("avatar", p.avatar)
                 .put("onboarding", p.onboarded));
 

@@ -193,10 +193,7 @@ public class MainActivity extends AppCompatActivity {
         String cloudUid = AccountStore.currentCloudUid(this);
         if (cloudUid != null) {
             FirebaseUser user = CloudAuth.currentUser(this);
-            if (user == null || !cloudUid.equals(user.getUid())) {
-                AccountStore.logout(this);
-                UserProfile.forget();
-            }
+            if (user == null || !cloudUid.equals(user.getUid())) clearSession();
         }
         if (!AccountStore.isLoggedIn(this)) {
             showAuthScreen(TAG_LOGIN);
@@ -265,13 +262,22 @@ public class MainActivity extends AppCompatActivity {
      * Sai da conta: pausa o cronômetro, cancela os lembretes deste usuário,
      * fecha o banco dele e volta para o login.
      */
+    /**
+     * Encerra a sessão neste aparelho: conta, banco, sincronização e caches em memória.
+     * Usado pelo "Sair" e quando a sessão da nuvem deixa de valer (o próximo usuário nunca
+     * pode herdar o repositório, o espelho ou os listeners do anterior).
+     */
+    private void clearSession() {
+        AccountStore.logout(this);
+        AlfredRepository.reset();
+        NutritionPlan.reset();
+        UserProfile.forget();
+    }
+
     public void logout() {
         AlfredRepository.get(this).logout(() -> {
-            AccountStore.logout(this);
             CloudAuth.signOut(this);
-            AlfredRepository.reset();
-            NutritionPlan.reset();
-            UserProfile.forget();
+            clearSession();
             previousTab = TAB_TODAY;
             started = false;
             route(TAB_TODAY);

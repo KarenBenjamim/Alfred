@@ -226,8 +226,26 @@ export function honor(text, form, name) {
   return text.replace('{Voc}', cap(voc)).replace('{voc}', voc);
 }
 
-/** Meta de água: peso × ml por kg (o do plano, se houver; senão 35). */
+/**
+ * Meta de água: peso × ml por kg (o do plano, se houver; senão 35).
+ * A conta é feita em float de 32 bits, como no Android (WaterGoal.goalMl): 70,1 kg × 35 dá
+ * 2454 ml nos dois (em double daria 2453,4999… e arredondaria para 2453).
+ */
 export function waterGoal(pesoKg, mlPerKg) {
   if (!(pesoKg >= 20 && pesoKg <= 400)) return 0;
-  return Math.round(pesoKg * (mlPerKg > 0 ? mlPerKg : DEFAULT_ML_PER_KG));
+  return Math.round(Math.fround(Math.fround(pesoKg) * (mlPerKg > 0 ? mlPerKg : DEFAULT_ML_PER_KG)));
+}
+
+/**
+ * O que gravar no assunto ao pausar o cronômetro (iniciado em startMs): o tempo de cada dia
+ * como increment e rodandoDesde = 0. Sem segundos a somar (menos de 1 s, ou relógio de outro
+ * aparelho adiantado) NÃO manda tempoPorDia: um mapa vazio com merge substituiria o tempo de
+ * todos os dias do assunto.
+ *
+ * @param inc a função increment do Firestore
+ */
+export function stopTimerData(startMs, nowMs, inc) {
+  const time = {};
+  for (const [d, secs] of Object.entries(splitByDay(startMs, nowMs))) time[d] = inc(secs);
+  return Object.keys(time).length ? { tempoPorDia: time, rodandoDesde: 0 } : { rodandoDesde: 0 };
 }

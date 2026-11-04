@@ -787,9 +787,7 @@ public class AlfredRepository {
                 if (!AccountStore.checkLegacyPassword(app, legacyId, password)) {
                     error = R.string.auth_error_wrong;
                 } else {
-                    Map<String, Long> habits = new HashMap<>();
-                    for (Habit h : habitDao.getAllSync()) habits.put(LegacyMigration.normalize(h.name), h.id);
-                    result = LegacyMigration.run(app, legacyId, uid, habits, appVersion);
+                    result = LegacyMigration.run(app, legacyId, uid, existingInCloud(), appVersion);
                 }
             } catch (java.util.concurrent.TimeoutException e) {
                 error = R.string.migration_error_timeout;
@@ -801,6 +799,16 @@ public class AlfredRepository {
             int err = error;
             main.post(() -> cb.done(r, err));
         }, "alfred-migracao").start();
+    }
+
+    /** O que a conta da nuvem já tem, lido do espelho local (a migração soma em vez de sobrescrever). */
+    private LegacyMigration.Existing existingInCloud() {
+        LegacyMigration.Existing e = new LegacyMigration.Existing();
+        for (Habit h : habitDao.getAllSync()) e.habits.put(LegacyMigration.normalize(h.name), h.id);
+        for (WaterLog w : db.syncDao().allWater()) e.waterByDay.put(CloudSchema.day(w.epochDay), w.ml);
+        e.profile = UserProfile.current(app).onboarded;
+        e.plan = NutritionPlan.get(app).isImported();
+        return e;
     }
 
     /** Arquivos de backup maiores que isto são recusados (protege a memória do celular). */
@@ -822,9 +830,7 @@ public class AlfredRepository {
             try {
                 JSONObject backup = new JSONObject(readText(source));
                 LegacyMigration.validate(backup);
-                Map<String, Long> habits = new HashMap<>();
-                for (Habit h : habitDao.getAllSync()) habits.put(LegacyMigration.normalize(h.name), h.id);
-                result = LegacyMigration.importBackup(backup, uid, habits);
+                result = LegacyMigration.importBackup(backup, uid, existingInCloud());
             } catch (LegacyMigration.InvalidBackup | JSONException | IOException e) {
                 AppLog.e("Backup inválido", e);
                 error = R.string.backup_import_invalid;
@@ -877,6 +883,9 @@ public class AlfredRepository {
             // O que vai sumir também precisa sumir na nuvem (lido antes de apagar aqui)
             List<Long> oldTasks = sync != null ? db.syncDao().taskIdsOlderThan(limit) : null;
             List<Long> oldWater = sync != null ? db.syncDao().waterDaysOlderThan(limit) : null;
+            Map<Long, List<Long>> oldHabits = sync != null ? CloudSync.byParent(db.syncDao().habitDaysOlderThan(limit)) : null;
+            Map<Long, List<Long>> oldMeals = sync != null ? CloudSync.byParent(db.syncDao().mealDaysOlderThan(limit)) : null;
+            Map<Long, List<Long>> oldStudy = sync != null ? CloudSync.byParent(db.syncDao().studyDaysOlderThan(limit)) : null;
             int[] removed = {0};
             db.runInTransaction(() -> {
                 removed[0] += taskDao.deleteOlderThan(limit);
@@ -885,7 +894,7 @@ public class AlfredRepository {
                 removed[0] += studyDao.deleteLogsOlderThan(limit);
                 removed[0] += waterDao.deleteOlderThan(limit);
             });
-            if (sync != null && removed[0] > 0) sync.purgeRemote(oldTasks, oldWater);
+            if (sync != null && removed[0] > 0) sync.purgeRemote(oldTasks, oldWater, oldHabits, oldMeals, oldStudy);
             main.post(() -> onDone.accept(removed[0]));
         });
     }

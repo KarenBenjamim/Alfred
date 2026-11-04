@@ -72,7 +72,7 @@ public class LegacyMigrationTest {
     @Test
     public void everyTableBecomesItsDocumentsWithReferencesRemapped() throws Exception {
         LegacyMigration.Result r = new LegacyMigration.Result();
-        List<LegacyMigration.Write> ws = LegacyMigration.plan(backup(), "u1", new HashMap<>(), r);
+        List<LegacyMigration.Write> ws = LegacyMigration.plan(backup(), "u1", new LegacyMigration.Existing(), r);
         assertEquals(1, r.tasks);
         assertEquals(1, r.meals);
         assertEquals(2, r.habits);
@@ -88,7 +88,8 @@ public class LegacyMigrationTest {
         LegacyMigration.Write meal = find(ws, CloudSchema.MEALS);
         List<?> itens = (List<?>) meal.data.get("itens");
         assertEquals("Arroz", ((Map<?, ?>) itens.get(0)).get("alimento")); // ordem pela posição
-        assertEquals(Collections.singletonList("2026-11-03"), meal.data.get(CloudSchema.MEAL_DONE));
+        assertTrue(meal.merge); // merge + arrayUnion: repetir não apaga marcações feitas depois
+        assertNotNull(meal.data.get(CloudSchema.MEAL_DONE));
 
         LegacyMigration.Write subject = find(ws, CloudSchema.SUBJECTS);
         assertEquals(LegacyMigration.stableId("u1", "study_topics", 1), subject.data.get("materiaId"));
@@ -107,8 +108,8 @@ public class LegacyMigrationTest {
 
     @Test
     public void runningTwiceProducesTheSameDocuments() throws Exception {
-        List<LegacyMigration.Write> a = LegacyMigration.plan(backup(), "u1", new HashMap<>(), new LegacyMigration.Result());
-        List<LegacyMigration.Write> b = LegacyMigration.plan(backup(), "u1", new HashMap<>(), new LegacyMigration.Result());
+        List<LegacyMigration.Write> a = LegacyMigration.plan(backup(), "u1", new LegacyMigration.Existing(), new LegacyMigration.Result());
+        List<LegacyMigration.Write> b = LegacyMigration.plan(backup(), "u1", new LegacyMigration.Existing(), new LegacyMigration.Result());
         assertEquals(a.size(), b.size());
         for (int i = 0; i < a.size(); i++) {
             assertEquals(a.get(i).collection, b.get(i).collection);
@@ -126,8 +127,8 @@ public class LegacyMigrationTest {
 
     @Test
     public void habitWithSameNameInTheCloudGetsTheOldDaysInsteadOfADuplicate() throws Exception {
-        Map<String, Long> existing = new HashMap<>();
-        existing.put(LegacyMigration.normalize("  beber 2 LITROS de água"), 777L);
+        LegacyMigration.Existing existing = new LegacyMigration.Existing();
+        existing.habits.put(LegacyMigration.normalize("  beber 2 LITROS de água"), 777L);
         LegacyMigration.Result r = new LegacyMigration.Result();
         List<LegacyMigration.Write> ws = LegacyMigration.plan(backup(), "u1", existing, r);
         assertEquals(1, r.habits); // só o "Ler" é novo
@@ -139,10 +140,39 @@ public class LegacyMigrationTest {
     }
 
     @Test
+    public void whatTheCloudAlreadyHasIsNotOverwritten() throws Exception {
+        JSONObject b = backup();
+        b.put("planoAlimentar", new JSONObject().put("source", "plano.xlsx"));
+        LegacyMigration.Existing existing = new LegacyMigration.Existing();
+        existing.profile = true;          // a conta da nuvem já tem perfil
+        existing.plan = true;             // e plano importado
+        existing.waterByDay.put("2026-11-03", 2500); // e mais água hoje do que a conta antiga
+        LegacyMigration.Result r = new LegacyMigration.Result();
+        List<LegacyMigration.Write> ws = LegacyMigration.plan(b, "u1", existing, r);
+        assertNull(find(ws, ""));
+        assertNull(find(ws, CloudSchema.PLAN));
+        assertNull(find(ws, CloudSchema.WATER));
+        assertEquals(0, r.waterDays);
+
+        existing.waterByDay.put("2026-11-03", 500); // menos água na nuvem: o total antigo (maior) vale
+        assertEquals(1800, find(LegacyMigration.plan(b, "u1", existing, new LegacyMigration.Result()),
+                CloudSchema.WATER).data.get(CloudSchema.WATER_ML));
+    }
+
+    @Test
+    public void forgottenRunningTimerArrivesPaused() throws Exception {
+        JSONObject b = backup();
+        b.getJSONObject("tabelas").getJSONArray("study_subjects").getJSONObject(0).put("runningSince", 1_700_000_000_000L);
+        LegacyMigration.Write s = find(LegacyMigration.plan(b, "u1", new LegacyMigration.Existing(),
+                new LegacyMigration.Result()), CloudSchema.SUBJECTS);
+        assertEquals(0L, s.data.get(CloudSchema.SUBJECT_RUNNING));
+    }
+
+    @Test
     public void profileWithoutOnboardingIsNotSent() throws Exception {
         JSONObject b = backup();
         b.getJSONObject("perfil").put("onboarding", false);
-        assertNull(find(LegacyMigration.plan(b, "u1", new HashMap<>(), new LegacyMigration.Result()), ""));
+        assertNull(find(LegacyMigration.plan(b, "u1", new LegacyMigration.Existing(), new LegacyMigration.Result()), ""));
         assertFalse(LegacyMigration.normalize(" A ").isEmpty());
     }
 }

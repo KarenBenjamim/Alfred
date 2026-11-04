@@ -152,6 +152,14 @@ public final class UserProfile {
         }
     }
 
+    /**
+     * Peso como double "limpo" para gravar fora do app (nuvem, backup): 70.1f vira 70.1,
+     * e não 70.0999984741211 (a conversão direta de float para double carrega esse ruído).
+     */
+    public double weightKgExact() {
+        return Double.parseDouble(Float.toString(weightKg));
+    }
+
     public UserProfile copy() {
         UserProfile p = new UserProfile();
         p.name = name;

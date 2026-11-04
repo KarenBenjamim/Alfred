@@ -165,7 +165,12 @@ public final class CloudSync {
                 AppLog.e("Falha ao ouvir " + collection, error);
                 return;
             }
-            if (snap != null) guard(() -> apply.apply(snap.getDocuments()));
+            if (snap == null) return;
+            // Retrato vazio vindo só do cache (ex.: cache do Firestore perdido) não pode apagar o
+            // espelho: espera a resposta do servidor. Gravações locais pendentes não caem aqui,
+            // porque o cache as inclui (o retrato não fica vazio).
+            if (snap.isEmpty() && snap.getMetadata().isFromCache()) return;
+            guard(() -> apply.apply(snap.getDocuments()));
         }));
     }
 
@@ -517,20 +522,40 @@ public final class CloudSync {
      * Depois do expurgo local: apaga na nuvem as tarefas e os dias de água antigos e
      * regrava as marcações por dia (já sem os dias antigos) de hábitos, refeições e estudos.
      */
-    void purgeRemote(List<Long> oldTaskIds, List<Long> oldWaterDays) {
+    void purgeRemote(List<Long> oldTaskIds, List<Long> oldWaterDays, Map<Long, List<Long>> oldHabitDays,
+                     Map<Long, List<Long>> oldMealDays, Map<Long, List<Long>> oldStudyDays) {
         deleteDocs(CloudSchema.TASKS, oldTaskIds);
         for (long day : oldWaterDays) col(CloudSchema.WATER).document(CloudSchema.day(day)).delete();
-        for (long id : dao.habitIds()) {
-            doc(CloudSchema.HABITS, id).update(CloudSchema.HABIT_DONE, isoDays(dao.habitDoneDays(id)));
+        // Só tira os dias antigos (arrayRemove / remover a chave): marcações novas feitas em outro
+        // aparelho e ainda não espelhadas aqui continuam lá. set(merge) não falha se o doc sumiu.
+        for (Map.Entry<Long, List<Long>> e : oldHabitDays.entrySet()) {
+            doc(CloudSchema.HABITS, e.getKey()).set(Collections.singletonMap(CloudSchema.HABIT_DONE,
+                    FieldValue.arrayRemove(isoDays(e.getValue()).toArray())), SetOptions.merge());
         }
-        for (long id : dao.mealIds()) {
-            doc(CloudSchema.MEALS, id).update(CloudSchema.MEAL_DONE, isoDays(dao.mealDoneDays(id)));
+        for (Map.Entry<Long, List<Long>> e : oldMealDays.entrySet()) {
+            doc(CloudSchema.MEALS, e.getKey()).set(Collections.singletonMap(CloudSchema.MEAL_DONE,
+                    FieldValue.arrayRemove(isoDays(e.getValue()).toArray())), SetOptions.merge());
         }
-        for (long id : dao.subjectIds()) {
+        for (Map.Entry<Long, List<Long>> e : oldStudyDays.entrySet()) {
             Map<String, Object> time = new HashMap<>();
-            for (StudyLog l : dao.logsOf(id)) time.put(CloudSchema.day(l.epochDay), l.seconds);
-            doc(CloudSchema.SUBJECTS, id).update(CloudSchema.SUBJECT_TIME, time);
+            for (long day : e.getValue()) time.put(CloudSchema.day(day), FieldValue.delete());
+            doc(CloudSchema.SUBJECTS, e.getKey()).set(Collections.singletonMap(CloudSchema.SUBJECT_TIME, time),
+                    SetOptions.merge());
         }
+    }
+
+    /** Linhas (pai, dia) -> {pai: [dias]}. */
+    static Map<Long, List<Long>> byParent(List<SyncDao.ParentDay> rows) {
+        Map<Long, List<Long>> out = new HashMap<>();
+        for (SyncDao.ParentDay r : rows) {
+            List<Long> days = out.get(r.parentId);
+            if (days == null) {
+                days = new ArrayList<>();
+                out.put(r.parentId, days);
+            }
+            days.add(r.epochDay);
+        }
+        return out;
     }
 
     private static List<String> isoDays(List<Long> days) {
@@ -598,7 +623,7 @@ public final class CloudSync {
             Map<String, Object> m = new HashMap<>();
             m.put("nome", p.name);
             m.put("tratamento", p.form);
-            m.put("pesoKg", (double) p.weightKg);
+            m.put("pesoKg", p.weightKgExact());
             m.put("avatar", p.avatar);
             m.put("onboarding", p.onboarded);
             userDoc(uid).set(m, SetOptions.merge());

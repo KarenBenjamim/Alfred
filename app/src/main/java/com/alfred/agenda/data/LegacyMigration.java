@@ -65,6 +65,17 @@ public final class LegacyMigration {
         }
     }
 
+    /**
+     * O que a conta da nuvem já tem (lido do espelho local), para a migração somar em vez de
+     * sobrescrever: hábitos de mesmo nome, perfil, plano e água por dia.
+     */
+    static final class Existing {
+        final Map<String, Long> habits = new HashMap<>();
+        final Map<String, Integer> waterByDay = new HashMap<>();
+        boolean profile;
+        boolean plan;
+    }
+
     /** Quantos itens foram enviados, para a mensagem final. */
     public static final class Result {
         public int tasks;
@@ -91,7 +102,7 @@ public final class LegacyMigration {
      *                       recebem as marcações antigas em vez de virar um hábito repetido
      * @throws Exception sem conexão, tempo esgotado ou recusa das regras
      */
-    static Result run(Context ctx, int legacyId, String uid, Map<String, Long> existingHabits,
+    static Result run(Context ctx, int legacyId, String uid, Existing existing,
                       @Nullable String appVersion) throws Exception {
         AppDatabase legacyDb = AppDatabase.openForAccount(ctx, legacyId);
         JSONObject backup;
@@ -106,7 +117,7 @@ public final class LegacyMigration {
             legacyDb.close();
         }
         Result result = new Result();
-        send(uid, plan(backup, scopeOf(backup), existingHabits, result));
+        send(uid, plan(backup, scopeOf(backup), existing, result));
         AccountStore.markMigrated(ctx, legacyId, uid);
         return result;
     }
@@ -116,9 +127,9 @@ public final class LegacyMigration {
      * O mesmo arquivo importado duas vezes regrava os mesmos documentos (não duplica).
      * Chame fora da thread principal.
      */
-    static Result importBackup(JSONObject backup, String uid, Map<String, Long> existingHabits) throws Exception {
+    static Result importBackup(JSONObject backup, String uid, Existing existing) throws Exception {
         Result result = new Result();
-        send(uid, plan(backup, scopeOf(backup), existingHabits, result));
+        send(uid, plan(backup, scopeOf(backup), existing, result));
         return result;
     }
 
@@ -180,14 +191,15 @@ public final class LegacyMigration {
         }
     }
 
-    static List<Write> plan(JSONObject backup, String scope, Map<String, Long> existingHabits, Result result)
+    static List<Write> plan(JSONObject backup, String scope, Existing existing, Result result)
             throws JSONException {
         JSONObject t = backup.getJSONObject("tabelas");
         List<Write> out = new ArrayList<>();
 
         // ---- Perfil e plano
         JSONObject perfil = backup.optJSONObject("perfil");
-        if (perfil != null && perfil.optBoolean("onboarding")) {
+        // Perfil e plano só sobem se a conta da nuvem ainda não tiver os dela (não sobrescreve)
+        if (!existing.profile && perfil != null && perfil.optBoolean("onboarding")) {
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("nome", perfil.optString("nome"));
             m.put("tratamento", perfil.optInt("tratamento"));
@@ -197,7 +209,7 @@ public final class LegacyMigration {
             out.add(new Write("", "", m, true));
         }
         JSONObject plano = backup.optJSONObject("planoAlimentar");
-        if (plano != null) out.add(new Write(CloudSchema.PLAN, CloudSchema.PLAN_DOC, CloudSync.toMap(plano), false));
+        if (!existing.plan && plano != null) out.add(new Write(CloudSchema.PLAN, CloudSchema.PLAN_DOC, CloudSync.toMap(plano), false));
 
         // ---- Tags e tarefas
         Map<Long, Long> tagIds = new HashMap<>();
@@ -254,8 +266,8 @@ public final class LegacyMigration {
             List<MealItem> items = itemsOf.containsKey(old) ? itemsOf.get(old) : new ArrayList<>();
             items.sort((a, b) -> Integer.compare(a.position, b.position));
             Map<String, Object> m = CloudSchema.meal(meal, items);
-            m.put(CloudSchema.MEAL_DONE, orEmpty(mealDone.get(old)));
-            out.add(new Write(CloudSchema.MEALS, CloudSchema.docId(meal.id), m, false));
+            putDays(m, CloudSchema.MEAL_DONE, mealDone.get(old));
+            out.add(new Write(CloudSchema.MEALS, CloudSchema.docId(meal.id), m, true));
             result.meals++;
         }
 
@@ -264,12 +276,12 @@ public final class LegacyMigration {
         for (JSONObject r : rows(t, "habits")) {
             long old = r.getLong("id");
             List<String> done = orEmpty(habitDone.get(old));
-            Long existing = existingHabits.get(normalize(r.optString("name")));
-            if (existing != null) {
+            Long same = existing.habits.get(normalize(r.optString("name")));
+            if (same != null) {
                 if (!done.isEmpty()) {
                     Map<String, Object> m = new HashMap<>();
                     m.put(CloudSchema.HABIT_DONE, FieldValue.arrayUnion(done.toArray()));
-                    out.add(new Write(CloudSchema.HABITS, CloudSchema.docId(existing), m, true));
+                    out.add(new Write(CloudSchema.HABITS, CloudSchema.docId(same), m, true));
                 }
                 continue;
             }
@@ -278,13 +290,16 @@ public final class LegacyMigration {
             h.name = r.optString("name");
             h.position = r.optInt("position");
             Map<String, Object> m = CloudSchema.habit(h);
-            m.put(CloudSchema.HABIT_DONE, done);
-            out.add(new Write(CloudSchema.HABITS, CloudSchema.docId(h.id), m, false));
+            putDays(m, CloudSchema.HABIT_DONE, done);
+            out.add(new Write(CloudSchema.HABITS, CloudSchema.docId(h.id), m, true));
             result.habits++;
         }
 
-        // ---- Água (o dia migrado vale o total antigo)
+        // ---- Água: fica o maior total do dia (não troca o que já foi registrado na nuvem)
         for (JSONObject r : rows(t, "water_logs")) {
+            String day = CloudSchema.day(r.getLong("epochDay"));
+            Integer cloud = existing.waterByDay.get(day);
+            if (cloud != null && cloud >= r.optInt("ml")) continue;
             Map<String, Object> m = new HashMap<>();
             m.put(CloudSchema.WATER_ML, r.optInt("ml"));
             out.add(new Write(CloudSchema.WATER, CloudSchema.day(r.getLong("epochDay")), m, false));
@@ -328,10 +343,10 @@ public final class LegacyMigration {
             s.name = r.optString("name");
             s.position = r.optInt("position");
             s.completed = r.optInt("completed") != 0;
-            s.runningSince = r.optLong("runningSince");
+            s.runningSince = 0; // cronômetro esquecido ligado na conta antiga não vira "rodando" na nuvem
             Map<String, Object> m = CloudSchema.subject(s);
             m.put(CloudSchema.SUBJECT_TIME, timeOf.containsKey(old) ? timeOf.get(old) : new HashMap<>());
-            out.add(new Write(CloudSchema.SUBJECTS, CloudSchema.docId(s.id), m, false));
+            out.add(new Write(CloudSchema.SUBJECTS, CloudSchema.docId(s.id), m, true));
             result.subjects++;
         }
         return out;
@@ -367,5 +382,10 @@ public final class LegacyMigration {
 
     private static List<String> orEmpty(@Nullable List<String> list) {
         return list == null ? new ArrayList<>() : list;
+    }
+
+    /** Dias de "feito" somados aos da nuvem (arrayUnion): repetir não apaga marcações novas. */
+    private static void putDays(Map<String, Object> m, String field, @Nullable List<String> days) {
+        if (days != null && !days.isEmpty()) m.put(field, FieldValue.arrayUnion(days.toArray()));
     }
 }

@@ -10,6 +10,7 @@ import com.alfred.agenda.data.entity.StudySubject;
 import com.alfred.agenda.data.entity.StudyTopic;
 import com.alfred.agenda.data.entity.Tag;
 import com.alfred.agenda.data.entity.Task;
+import com.alfred.agenda.util.TagPalette;
 
 import java.security.SecureRandom;
 import java.time.LocalDate;
@@ -175,7 +176,8 @@ public final class CloudSchema {
         Tag t = new Tag();
         t.id = id;
         t.name = str(m, "nome", "");
-        t.colorIndex = integer(m, "cor", 0);
+        // Sem cor válida: cinza, como a web e como o app já mostra (TagPalette.safeIndex)
+        t.colorIndex = TagPalette.safeIndex(integer(m, "cor", TagPalette.DEFAULT_INDEX));
         return t;
     }
 

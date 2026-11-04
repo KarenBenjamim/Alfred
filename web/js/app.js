@@ -147,10 +147,10 @@ function setupLogin() {
 onAuthStateChanged(auth, (user) => {
   unsubscribe.forEach((u) => u());
   unsubscribe = [];
+  resetData(); // nada do usuário anterior fica na tela (nem decide o onboarding)
   state.user = user;
   $('#boot').hidden = true;
   if (!user) {
-    state.profile = undefined;
     $('#app').hidden = true;
     $('#login').hidden = false;
     return;
@@ -160,6 +160,23 @@ onAuthStateChanged(auth, (user) => {
   listen();
   render();
 });
+
+function resetData() {
+  for (const k of ['tasks', 'tags', 'meals', 'habits', 'water', 'topics', 'modules', 'subjects']) state[k] = new Map();
+  state.plan = null;
+  state.profile = undefined;
+  state.loadError = '';
+  state.topicId = 0;
+}
+
+/** Erro ao ouvir o perfil/plano: mostra na tela em vez de "Carregando…" para sempre. */
+function loadFailed(what, e) {
+  console.error(what, e);
+  state.loadError = e.code === 'permission-denied'
+    ? 'Sem permissão para ler seus dados. Saia e entre de novo.'
+    : 'Não consegui carregar seus dados agora. Verifique a internet.';
+  render();
+}
 
 function listen() {
   // Ids numéricos (como no app); só a água usa a data como id. Documento estranho é ignorado.
@@ -187,13 +204,14 @@ function listen() {
   unsubscribe.push(onSnapshot(doc(userRef(), S.COL.PLAN, 'atual'), (snap) => {
     state.plan = snap.exists() ? snap.data() : null;
     render();
-  }));
+  }, (e) => loadFailed('plano', e)));
   unsubscribe.push(onSnapshot(userRef(), { includeMetadataChanges: true }, (snap) => {
     // Só decide "não tem perfil" quando o servidor confirmar (o cache pode estar vazio)
     if (!snap.exists() && snap.metadata.fromCache) return;
+    state.loadError = '';
     state.profile = snap.exists() ? snap.data() : null;
     render();
-  }));
+  }, (e) => loadFailed('perfil', e)));
 }
 
 function syncStatus(meta) {
@@ -220,7 +238,13 @@ function render() {
   if (!state.user) return;
   const content = $('#content');
   if (state.profile === undefined) {
-    content.replaceChildren(h('p', { class: 'empty' }, 'Carregando seus dados…'));
+    content.replaceChildren(state.loadError
+      ? h('div', { class: 'card' }, h('p', { class: 'error' }, state.loadError),
+        h('div', { class: 'actions' },
+          h('button', { class: 'text', onclick: () => signOut(auth) }, 'Sair'),
+          h('button', { class: 'primary', onclick: () => location.reload() }, 'Tentar de novo')))
+      : h('p', { class: 'empty' }, navigator.onLine ? 'Carregando seus dados…'
+        : 'Sem internet. Seus dados aparecem assim que a conexão voltar.'));
     return;
   }
   const p = state.profile;
@@ -569,9 +593,7 @@ function subjectSeconds(s, from, to, now = Date.now()) {
 }
 
 function stopTimerInBatch(batch, s, now) {
-  const time = {};
-  for (const [d, secs] of Object.entries(S.splitByDay(s.rodandoDesde, now))) time[d] = increment(secs);
-  batch.set(ref(S.COL.SUBJECTS, s.id), { tempoPorDia: time, rodandoDesde: 0 }, { merge: true });
+  batch.set(ref(S.COL.SUBJECTS, s.id), S.stopTimerData(s.rodandoDesde, now, increment), { merge: true });
 }
 
 function toggleTimer(s) {
@@ -604,6 +626,10 @@ function renderStudy() {
   const color = S.STUDY_COLORS[topic.cor][1];
   const modules = [...state.modules.values()].filter((m) => m.materiaId === topic.id).sort((a, b) => a.posicao - b.posicao);
   const subjects = [...state.subjects.values()].filter((s) => s.materiaId === topic.id);
+  // Assuntos sem módulo (o app aceita) aparecem num grupo próprio, em vez de sumirem
+  if (subjects.some((s) => !s.moduloId || !state.modules.has(s.moduloId))) {
+    modules.push({ id: null, materiaId: topic.id, nome: 'Sem módulo', posicao: Infinity, virtual: true });
+  }
   const todayTotal = subjects.reduce((n, s) => n + subjectSeconds(s, t, t), 0);
   return h('div', {}, head,
     h('div', { class: 'card' }, h('p', {}, h('span', { class: 'big gold', 'data-topic-today': topic.id }, S.duration(todayTotal)),
@@ -611,17 +637,18 @@ function renderStudy() {
     h('div', { class: 'actions' }, h('button', { class: 'primary', onclick: () => editModule(null, topic) }, '+ Módulo')),
     modules.length === 0 ? h('p', { class: 'empty' }, voc('Organize a matéria em módulos, {voc}. Depois, crie os assuntos dentro de cada módulo.')) : null,
     modules.map((m) => {
-      const list = subjects.filter((s) => s.moduloId === m.id).sort((a, b) => a.posicao - b.posicao);
+      const list = subjects.filter((s) => (m.virtual ? !s.moduloId || !state.modules.has(s.moduloId) : s.moduloId === m.id))
+        .sort((a, b) => a.posicao - b.posicao);
       const done = list.filter((s) => s.concluido).length;
       const pct = list.length ? Math.round((100 * done) / list.length) : 0;
       const total = list.reduce((n, s) => n + subjectSeconds(s, '0000-00-00', t), 0);
       return h('section', {},
         h('div', { class: 'card' },
           h('div', { class: 'card-head' }, h('h3', {}, m.nome), h('span', { class: 'gold' }, `${pct}%`),
-            h('button', { class: 'icon', 'aria-label': `Editar módulo ${m.nome}`, onclick: () => editModule(m, topic) }, '⋮')),
+            m.virtual ? null : h('button', { class: 'icon', 'aria-label': `Editar módulo ${m.nome}`, onclick: () => editModule(m, topic) }, '⋮')),
           h('div', { class: 'bar' }, h('span', { style: { width: `${pct}%` } })),
           h('p', { class: 'caption' }, `${done} de ${list.length} assunto${list.length === 1 ? '' : 's'} concluído${list.length === 1 ? '' : 's'} · Total ${S.duration(total)}`),
-          h('div', { class: 'actions' }, h('button', { class: 'text', onclick: () => editSubject(null, m) }, '+ Assunto'))),
+          m.virtual ? null : h('div', { class: 'actions' }, h('button', { class: 'text', onclick: () => editSubject(null, m) }, '+ Assunto'))),
         list.map((s) => {
           const running = s.rodandoDesde > 0;
           const mark = s.concluido ? 'var(--gold)' : color;
@@ -700,12 +727,14 @@ function editSubject(s, m) {
   const name = h('input', { maxlength: '60', required: true, value: s?.nome ?? '' });
   const done = h('input', { type: 'checkbox', checked: !!s?.concluido });
   const others = [...state.modules.values()].filter((x) => x.materiaId === m.materiaId);
-  const move = s && others.length > 1 ? h('select', {}, others.map((x) => h('option', { value: x.id, selected: x.id === m.id }, x.nome))) : null;
+  const move = s && others.length > (m.virtual ? 0 : 1)
+    ? h('select', {}, m.virtual ? h('option', { value: '' }, 'Sem módulo') : null,
+      others.map((x) => h('option', { value: x.id, selected: x.id === m.id }, x.nome))) : null;
   openDialog(s ? 'Editar assunto' : 'Novo assunto', h('div', {}, field('Assunto (ex.: Verbos irregulares)', name),
     s ? h('label', { class: 'check' }, done, 'Concluído') : null, move ? field('Módulo', move) : null), {
     onSave: () => {
       if (!name.value.trim()) return false;
-      const moduloId = move ? Number(move.value) : m.id;
+      const moduloId = move && move.value ? Number(move.value) : m.id; // null = sem módulo
       const pos = s && moduloId === s.moduloId ? s.posicao
         : Math.max(-1, ...[...state.subjects.values()].filter((x) => x.moduloId === moduloId).map((x) => x.posicao)) + 1;
       const data = { materiaId: m.materiaId, moduloId, nome: name.value.trim(), posicao: pos, concluido: s ? done.checked : false };
