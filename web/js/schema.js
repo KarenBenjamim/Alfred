@@ -2,8 +2,9 @@
 // Qualquer mudança aqui precisa ser feita lá também.
 //
 //   usuarios/{uid}                         nome, tratamento, pesoKg, avatar, onboarding
-//   usuarios/{uid}/tarefas/{id}            titulo, descricao, dia, prioridade, status, categoria, periodo, tags
-//   usuarios/{uid}/tags/{id}               nome, cor
+//   usuarios/{uid}/tarefas/{id}            titulo, descricao, dia, prioridade, status, categoria, periodo, tags,
+//                                          tipo, diaInteiro, inicio, fim, adiadaDe (Trabalho)
+//   usuarios/{uid}/tags/{id}               nome, cor, grupo (-1 = Pessoal; 0..4 = grupo do Trabalho)
 //   usuarios/{uid}/refeicoes/{id}          nome, horario, avisar, observacoes, itens, feitas
 //   usuarios/{uid}/plano/atual             plano importado da planilha (pelo app Android)
 //   usuarios/{uid}/habitos/{id}            nome, posicao, feitos
@@ -19,7 +20,11 @@ export const COL = {
 };
 
 export const PRIORITIES = ['Baixa', 'Média', 'Alta'];
-export const STATUSES = ['Pendente', 'Em andamento', 'Concluída'];
+export const STATUSES = ['Pendente', 'Em andamento', 'Concluída', 'Cancelada'];
+export const STATUS_CANCELED = 3;
+/** Tipo de demanda do Trabalho (mesma ordem de Task.TYPE_* no Android). */
+export const DEMAND_TYPES = ['Reunião', 'Entrega', 'Desenvolvimento do projeto', 'Atividade externa', 'Treinamento', 'Outro'];
+export const TYPE_OTHER = 5;
 export const PERIODS = ['Manhã', 'Tarde', 'Noite'];
 export const STATUS_DONE = 2;
 export const HONORIFICS = ['Senhor', 'Senhora', 'Senhorita', 'Pelo nome'];
@@ -31,6 +36,16 @@ export const TAG_COLORS = [
   ['Lavanda', '#B39DDB'], ['Rosa', '#F48FB1'], ['Coral', '#FF8A80'], ['Laranja', '#FFB74D'],
   ['Menta', '#80CBC4'], ['Verde', '#A5D6A7'], ['Azul', '#90CAF9'], ['Cinza', '#B0BEC5'],
 ];
+// Grupos das tags de Trabalho (Tag.GROUP_*): o grupo define a cor; cada tag ganha um dos 4 tons.
+// [nome, tons no tema escuro, tons no tema claro] — os mesmos de values-night/ e values/ no Android.
+export const WORK_GROUPS = [
+  ['Projeto em que estou alocada', ['#7FB0F2', '#5B9BEA', '#A3C7F7', '#4F8FE8'], ['#1E5AA8', '#2F6FC9', '#174A8C', '#3B6FB8']],
+  ['Bot em que estou dedicada', ['#7FD9A8', '#5CC98E', '#A3E6C2', '#3FBF7F'], ['#1F7A4D', '#2E8B57', '#176640', '#3A7F5C']],
+  ['Atividade da empresa', ['#F7BC7F', '#F2A05C', '#FAD2A6', '#F29A3F'], ['#B35A12', '#A8520E', '#9A4C0E', '#B86A28']],
+  ['Evento ou estudo', ['#BFA0EE', '#A685E6', '#D4BFF4', '#9B6FE0'], ['#6A3FB5', '#7A4FC2', '#5A3596', '#7F5AB8']],
+  ['Outros', ['#F29FC8', '#EC82B6', '#F7C0DB', '#E86FA8'], ['#B0245A', '#C2306B', '#96204D', '#B84A78']],
+];
+
 export const STUDY_COLORS = [
   ['Azul-marinho', '#41608F'], ['Petróleo', '#2F6E73'], ['Verde-musgo', '#4E7A57'], ['Vinho', '#8A3B4F'],
   ['Terracota', '#A35F3E'], ['Ameixa', '#6C4C8A'], ['Rosa antigo', '#9A5A73'], ['Ardósia', '#5B6577'],
@@ -155,14 +170,46 @@ export function readTask(id, d) {
   if (!id || !parseDay(d.dia)) return null;
   return {
     id, titulo: str(d.titulo), descricao: str(d.descricao), dia: d.dia,
-    prioridade: clamp(num(d.prioridade, 1), 0, 2), status: clamp(num(d.status, 0), 0, 2),
+    prioridade: clamp(num(d.prioridade, 1), 0, 2), status: clamp(num(d.status, 0), 0, 3),
     categoria: d.categoria === 'pessoal' ? 'pessoal' : 'trabalho', periodo: clamp(num(d.periodo, 0), 0, 2),
     tags: Array.isArray(d.tags) ? [...new Set(d.tags.filter((t) => typeof t === 'number' && t > 0))] : [],
+    tipo: clamp(num(d.tipo, TYPE_OTHER), 0, DEMAND_TYPES.length - 1),
+    diaInteiro: bool(d.diaInteiro),
+    inicio: parseTime(d.inicio, -1), fim: parseTime(d.fim, -1),
+    adiadaDe: parseDay(d.adiadaDe) ? d.adiadaDe : null,
   };
 }
 
+/** Encerrada = concluída ou cancelada (sem atraso, fora das pendências). */
+export const isClosed = (t) => t.status >= 2;
+export const hasTime = (t) => !t.diaInteiro && t.inicio >= 0;
+
+/** Período que corresponde ao horário (como Task.periodFor): agrupa como as tarefas antigas. */
+export function periodFor(diaInteiro, inicio) {
+  if (diaInteiro || inicio < 0) return 0;
+  return inicio < 13 * 60 ? 0 : 1;
+}
+
 export function readTag(id, d) {
-  return id ? { id, nome: str(d.nome), cor: clamp(num(d.cor, 7), 0, 7) } : null;
+  if (!id) return null;
+  const g = num(d.grupo, -1);
+  const grupo = Number.isInteger(g) && g >= 0 && g < WORK_GROUPS.length ? g : -1;
+  return { id, nome: str(d.nome), grupo, cor: grupo >= 0 ? clamp(num(d.cor, 0), 0, 3) : clamp(num(d.cor, 7), 0, 7) };
+}
+
+/** Tom para uma tag nova no grupo: o menos usado (como WorkTagColors.nextShade). */
+export function nextShade(grupo, tags, ignoreId = 0) {
+  const used = [0, 0, 0, 0];
+  for (const t of tags) if (t.id !== ignoreId && t.grupo === grupo) used[t.cor]++;
+  let best = 0;
+  for (let s = 1; s < 4; s++) if (used[s] < used[best]) best = s;
+  return best;
+}
+
+/** Cor da tag no tema atual (Pessoal: paleta de 8; Trabalho: grupo e tom). */
+export function tagColor(tag, dark = true) {
+  if (tag.grupo >= 0) return WORK_GROUPS[tag.grupo][dark ? 1 : 2][tag.cor];
+  return TAG_COLORS[tag.cor][1];
 }
 
 export function readMeal(id, d) {

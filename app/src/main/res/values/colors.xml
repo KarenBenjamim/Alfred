@@ -77,4 +77,27 @@
     <color name="glow_end">#008C6600</color>
 
     <color name="ic_launcher_background">#FF0B0B0D</color>
+
+    <!-- Tags de Trabalho: 5 grupos x 4 tons (WorkTagColors). Projeto azul, Bot verde,
+         Empresa laranja, Evento/Estudo roxo, Outros rosa. Tons fechados: legíveis sobre o branco. -->
+    <color name="wtag_project_0">#FF1E5AA8</color>
+    <color name="wtag_project_1">#FF2F6FC9</color>
+    <color name="wtag_project_2">#FF174A8C</color>
+    <color name="wtag_project_3">#FF3B6FB8</color>
+    <color name="wtag_bot_0">#FF1F7A4D</color>
+    <color name="wtag_bot_1">#FF2E8B57</color>
+    <color name="wtag_bot_2">#FF176640</color>
+    <color name="wtag_bot_3">#FF3A7F5C</color>
+    <color name="wtag_company_0">#FFB35A12</color>
+    <color name="wtag_company_1">#FFA8520E</color>
+    <color name="wtag_company_2">#FF9A4C0E</color>
+    <color name="wtag_company_3">#FFB86A28</color>
+    <color name="wtag_event_0">#FF6A3FB5</color>
+    <color name="wtag_event_1">#FF7A4FC2</color>
+    <color name="wtag_event_2">#FF5A3596</color>
+    <color name="wtag_event_3">#FF7F5AB8</color>
+    <color name="wtag_other_0">#FFB0245A</color>
+    <color name="wtag_other_1">#FFC2306B</color>
+    <color name="wtag_other_2">#FF96204D</color>
+    <color name="wtag_other_3">#FFB84A78</color>
 </resources>

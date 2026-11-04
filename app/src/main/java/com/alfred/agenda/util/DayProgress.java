@@ -83,7 +83,7 @@ public final class DayProgress {
                                       List<StudySubject> subjects, Set<Long> studiedSubjectIds) {
         int wDone = 0, wTotal = 0, pDone = 0, pTotal = 0;
         for (Task t : tasksToday) {
-            if (t.dueEpochDay != today) continue;
+            if (t.dueEpochDay != today || t.isCanceled()) continue; // cancelada não conta
             if (t.isPersonal()) {
                 pTotal++;
                 if (t.isDone()) pDone++;

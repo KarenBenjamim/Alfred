@@ -36,4 +36,27 @@
     <color name="glow_card">#1FF2C75C</color>
     <color name="study_focus_stroke">#66F2C75C</color>
     <color name="glow_end">#00F2C75C</color>
+
+    <!-- Tags de Trabalho: 5 grupos x 4 tons (WorkTagColors). Projeto azul, Bot verde,
+         Empresa laranja, Evento/Estudo roxo, Outros rosa. Tons abertos: legíveis sobre o escuro. -->
+    <color name="wtag_project_0">#FF7FB0F2</color>
+    <color name="wtag_project_1">#FF5B9BEA</color>
+    <color name="wtag_project_2">#FFA3C7F7</color>
+    <color name="wtag_project_3">#FF4F8FE8</color>
+    <color name="wtag_bot_0">#FF7FD9A8</color>
+    <color name="wtag_bot_1">#FF5CC98E</color>
+    <color name="wtag_bot_2">#FFA3E6C2</color>
+    <color name="wtag_bot_3">#FF3FBF7F</color>
+    <color name="wtag_company_0">#FFF7BC7F</color>
+    <color name="wtag_company_1">#FFF2A05C</color>
+    <color name="wtag_company_2">#FFFAD2A6</color>
+    <color name="wtag_company_3">#FFF29A3F</color>
+    <color name="wtag_event_0">#FFBFA0EE</color>
+    <color name="wtag_event_1">#FFA685E6</color>
+    <color name="wtag_event_2">#FFD4BFF4</color>
+    <color name="wtag_event_3">#FF9B6FE0</color>
+    <color name="wtag_other_0">#FFF29FC8</color>
+    <color name="wtag_other_1">#FFEC82B6</color>
+    <color name="wtag_other_2">#FFF7C0DB</color>
+    <color name="wtag_other_3">#FFE86FA8</color>
 </resources>

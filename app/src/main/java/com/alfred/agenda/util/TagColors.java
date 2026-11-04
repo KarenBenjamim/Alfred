@@ -7,6 +7,7 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
 
 import com.alfred.agenda.R;
+import com.alfred.agenda.data.entity.Tag;
 import com.google.android.material.chip.Chip;
 
 /**
@@ -27,14 +28,26 @@ public final class TagColors {
         return ContextCompat.getColor(ctx, COLORS[TagPalette.safeIndex(index)]);
     }
 
+    /** Cor de uma tag: do grupo e tom (Trabalho, WorkTagColors) ou da paleta (Pessoal). */
+    public static int color(Context ctx, Tag tag) {
+        return tag.isWork() ? WorkTagColors.color(ctx, tag.tagGroup, tag.colorIndex) : color(ctx, tag.colorIndex);
+    }
+
+    public static void style(Chip chip, Tag tag, boolean selectable) {
+        styleWithColor(chip, color(chip.getContext(), tag), selectable);
+    }
+
     /**
      * Pinta um chip com a cor da tag.
      *  - Selecionável (no formulário): contorno e texto na cor; marcado = fundo cheio na cor.
      *  - Só exibição (no cartão): fundo bem suave na cor e texto na cor.
      */
     public static void style(Chip chip, int index, boolean selectable) {
+        styleWithColor(chip, color(chip.getContext(), index), selectable);
+    }
+
+    private static void styleWithColor(Chip chip, int color, boolean selectable) {
         Context ctx = chip.getContext();
-        int color = color(ctx, index);
         int dark = ContextCompat.getColor(ctx, R.color.on_accent);
         int soft = ColorUtils.setAlphaComponent(color, 0x33);
         int[][] states = {{android.R.attr.state_checked}, {}};

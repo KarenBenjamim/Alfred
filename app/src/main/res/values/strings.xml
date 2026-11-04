@@ -464,6 +464,18 @@
     <string name="tag_edit">Editar tag</string>
     <string name="tag_name">Nome da tag (ex.: Saúde)</string>
     <string name="tag_color">Cor</string>
+    <string name="tag_group">Grupo (define a cor)</string>
+    <string name="task_type">Tipo de demanda</string>
+    <string name="task_all_day">Dia inteiro</string>
+    <string name="task_start">Início: %1$s</string>
+    <string name="task_end">Fim: %1$s</string>
+    <string name="task_time_range">%1$s–%2$s</string>
+    <string name="task_error_end">O fim precisa ser depois do início.</string>
+    <string name="task_postpone">Adiar</string>
+    <string name="task_postponed_from">Adiada de %1$s</string>
+    <string name="task_postponed_msg">Adiada para %1$s, {voc}.</string>
+    <string name="task_canceled_msg">Compromisso cancelado, {voc}.</string>
+    <string name="task_cancel">Cancelar compromisso</string>
     <string name="tag_hint">Toque para marcar. Toque e segure numa tag para editar ou excluir.</string>
     <string name="tag_delete_msg">A tag sairá de todas as tarefas, mas as tarefas continuam, {voc}.</string>
     <!-- A ordem precisa bater com TagColors.COLORS -->
@@ -578,10 +590,29 @@
     </string-array>
 
     <!-- A ordem precisa bater com Task.STATUS_* -->
+    <!-- Mesma ordem de Task.STATUS_* (3 = cancelada) -->
     <string-array name="status_options">
         <item>Pendente</item>
         <item>Em andamento</item>
         <item>Concluída</item>
+        <item>Cancelada</item>
+    </string-array>
+    <!-- Tipo de demanda do Trabalho: mesma ordem de Task.TYPE_* -->
+    <string-array name="demand_types">
+        <item>Reunião</item>
+        <item>Entrega</item>
+        <item>Desenvolvimento do projeto</item>
+        <item>Atividade externa</item>
+        <item>Treinamento</item>
+        <item>Outro</item>
+    </string-array>
+    <!-- Grupos das tags de Trabalho: mesma ordem de Tag.GROUP_* (a cor vem do grupo) -->
+    <string-array name="work_tag_groups">
+        <item>Projeto em que estou alocada</item>
+        <item>Bot em que estou dedicada</item>
+        <item>Atividade da empresa</item>
+        <item>Evento ou estudo</item>
+        <item>Outros</item>
     </string-array>
 
     <!-- A ordem precisa bater com Task.PERIOD_* (Trabalho usa só as duas primeiras) -->

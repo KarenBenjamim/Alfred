@@ -20,6 +20,7 @@ import com.alfred.agenda.data.entity.Task;
 import com.alfred.agenda.data.entity.TaskTag;
 import com.alfred.agenda.util.DateUtils;
 import com.alfred.agenda.util.EmptyState;
+import com.alfred.agenda.util.Honorific;
 import com.alfred.agenda.util.TaskGrouping;
 import com.alfred.agenda.util.UiUtils;
 import com.google.android.material.button.MaterialButton;
@@ -124,6 +125,27 @@ public class TasksFragment extends Fragment {
                     if (isAdded()) ((MainActivity) requireActivity()).celebrateGoal();
                 } : null);
             }
+
+            @Override
+            public void onPostpone(Task task) {
+                long from = task.dueEpochDay;
+                UiUtils.pickDate(TasksFragment.this, Math.max(from + 1, DateUtils.today()), picked -> {
+                    if (picked == from || !isAdded()) return;
+                    Task moved = task.copy();
+                    moved.postponeTo(picked);
+                    viewModel.save(moved, tagIdsOf(task.id));
+                    ((MainActivity) requireActivity()).showMessage(Honorific.str(requireContext(),
+                            R.string.task_postponed_msg, DateUtils.formatDate(picked)));
+                });
+            }
+
+            @Override
+            public void onCancel(Task task) {
+                Task canceled = task.copy();
+                canceled.status = Task.STATUS_CANCELED;
+                viewModel.save(canceled, tagIdsOf(task.id));
+                ((MainActivity) requireActivity()).showMessage(Honorific.str(requireContext(), R.string.task_canceled_msg));
+            }
         });
         list.setAdapter(adapter);
 
@@ -168,16 +190,15 @@ public class TasksFragment extends Fragment {
             allTasks = tasks;
             render();
         });
-        if (category == Task.CATEGORY_PERSONAL) {
-            viewModel.tags.observe(getViewLifecycleOwner(), tags -> {
-                allTags = tags;
-                rebuildTagMap();
-            });
-            viewModel.taskTags.observe(getViewLifecycleOwner(), loaded -> {
-                links = loaded;
-                rebuildTagMap();
-            });
-        }
+        // Tags nas duas abas (Trabalho: por grupo de cor; Pessoal: paleta de 8 cores)
+        viewModel.tags.observe(getViewLifecycleOwner(), tags -> {
+            allTags = tags;
+            rebuildTagMap();
+        });
+        viewModel.taskTags.observe(getViewLifecycleOwner(), loaded -> {
+            links = loaded;
+            rebuildTagMap();
+        });
 
         view.findViewById(R.id.fab).setOnClickListener(v -> newTask());
         if (MainActivity.ACTION_NEW_TASK.equals(action)) newTask();
@@ -223,7 +244,7 @@ public class TasksFragment extends Fragment {
         long today = DateUtils.today();
         int doneToday = 0, totalToday = 0;
         for (Task t : allTasks) {
-            if (t.dueEpochDay != today) continue;
+            if (t.dueEpochDay != today || t.isCanceled()) continue; // cancelada não conta
             totalToday++;
             if (t.isDone()) doneToday++;
         }

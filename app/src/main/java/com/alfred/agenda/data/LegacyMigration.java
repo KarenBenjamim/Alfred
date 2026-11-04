@@ -218,6 +218,7 @@ public final class LegacyMigration {
             tag.id = stableId(scope, "tags", r.getLong("id"));
             tag.name = r.optString("name");
             tag.colorIndex = r.optInt("colorIndex");
+            tag.tagGroup = r.optInt("tagGroup", Tag.NO_GROUP);
             tagIds.put(r.getLong("id"), tag.id);
             out.add(new Write(CloudSchema.TAGS, CloudSchema.docId(tag.id), CloudSchema.tag(tag), false));
         }
@@ -236,6 +237,11 @@ public final class LegacyMigration {
             task.status = r.optInt("status", Task.STATUS_PENDING);
             task.category = r.optInt("category", Task.CATEGORY_WORK);
             task.period = r.optInt("period", Task.PERIOD_MORNING);
+            task.demandType = r.optInt("demandType", Task.TYPE_OTHER);
+            task.allDay = r.optInt("allDay", 0) != 0;
+            task.startMinutes = r.optInt("startMinutes", -1);
+            task.endMinutes = r.optInt("endMinutes", -1);
+            task.postponedFrom = r.optLong("postponedFrom", 0);
             List<Long> tags = tagsOfTask.get(r.getLong("id"));
             out.add(new Write(CloudSchema.TASKS, CloudSchema.docId(task.id),
                     CloudSchema.task(task, tags == null ? new ArrayList<>() : tags), false));

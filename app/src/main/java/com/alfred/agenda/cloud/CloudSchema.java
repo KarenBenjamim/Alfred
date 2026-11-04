@@ -27,8 +27,9 @@ import java.util.Map;
  * mesmos campos (ver web/js/schema.js).
  *
  *   usuarios/{uid}                     nome, tratamento, pesoKg, avatar, onboarding
- *   usuarios/{uid}/tarefas/{id}        titulo, descricao, dia, prioridade, status, categoria, periodo, tags
- *   usuarios/{uid}/tags/{id}           nome, cor
+ *   usuarios/{uid}/tarefas/{id}        titulo, descricao, dia, prioridade, status, categoria, periodo, tags,
+ *                                      tipo, diaInteiro, inicio, fim, adiadaDe (Trabalho)
+ *   usuarios/{uid}/tags/{id}           nome, cor, grupo (-1 = Pessoal; 0..4 = grupo do Trabalho)
  *   usuarios/{uid}/refeicoes/{id}      nome, horario, avisar, observacoes, itens, feitas
  *   usuarios/{uid}/plano/atual         plano importado da planilha
  *   usuarios/{uid}/habitos/{id}        nome, posicao, feitos
@@ -140,6 +141,11 @@ public final class CloudSchema {
         m.put("categoria", t.category == Task.CATEGORY_PERSONAL ? "pessoal" : "trabalho");
         m.put("periodo", t.period);
         m.put("tags", new ArrayList<>(tagIds));
+        m.put("tipo", t.demandType);
+        m.put("diaInteiro", t.allDay);
+        m.put("inicio", t.startMinutes >= 0 ? time(t.startMinutes) : null);
+        m.put("fim", t.endMinutes >= 0 ? time(t.endMinutes) : null);
+        m.put("adiadaDe", t.postponedFrom > 0 ? day(t.postponedFrom) : null);
         return m;
     }
 
@@ -153,9 +159,15 @@ public final class CloudSchema {
         t.description = str(m, "descricao", "");
         t.dueEpochDay = dia;
         t.priority = clamp(integer(m, "prioridade", Task.PRIORITY_MEDIUM), Task.PRIORITY_LOW, Task.PRIORITY_HIGH);
-        t.status = clamp(integer(m, "status", Task.STATUS_PENDING), Task.STATUS_PENDING, Task.STATUS_DONE);
+        t.status = clamp(integer(m, "status", Task.STATUS_PENDING), Task.STATUS_PENDING, Task.STATUS_CANCELED);
         t.category = "pessoal".equals(m.get("categoria")) ? Task.CATEGORY_PERSONAL : Task.CATEGORY_WORK;
         t.period = clamp(integer(m, "periodo", Task.PERIOD_MORNING), Task.PERIOD_MORNING, Task.PERIOD_NIGHT);
+        t.demandType = clamp(integer(m, "tipo", Task.TYPE_OTHER), 0, Task.TYPE_COUNT - 1);
+        t.allDay = bool(m, "diaInteiro", false);
+        t.startMinutes = parseTime(m.get("inicio"), -1);
+        t.endMinutes = parseTime(m.get("fim"), -1);
+        Long from = parseDay(m.get("adiadaDe"));
+        t.postponedFrom = from == null ? 0 : from;
         return t;
     }
 
@@ -167,6 +179,7 @@ public final class CloudSchema {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("nome", t.name);
         m.put("cor", t.colorIndex);
+        m.put("grupo", t.tagGroup);
         return m;
     }
 
@@ -177,7 +190,11 @@ public final class CloudSchema {
         t.id = id;
         t.name = str(m, "nome", "");
         // Sem cor válida: cinza, como a web e como o app já mostra (TagPalette.safeIndex)
-        t.colorIndex = TagPalette.safeIndex(integer(m, "cor", TagPalette.DEFAULT_INDEX));
+        int group = integer(m, "grupo", Tag.NO_GROUP);
+        t.tagGroup = group >= 0 && group < Tag.GROUP_COUNT ? group : Tag.NO_GROUP;
+        // Pessoal: cor da paleta (sem cor válida, cinza); Trabalho: tom 0 a 3 dentro do grupo
+        t.colorIndex = t.isWork() ? Math.max(0, Math.min(3, integer(m, "cor", 0)))
+                : TagPalette.safeIndex(integer(m, "cor", TagPalette.DEFAULT_INDEX));
         return t;
     }
 

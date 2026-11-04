@@ -43,6 +43,12 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         void onDelete(Task task);
 
         void onDoneChanged(Task task, boolean done);
+
+        /** Trabalho: compromisso não ocorreu e vai para outra data. */
+        void onPostpone(Task task);
+
+        /** Trabalho: compromisso não vai acontecer. */
+        void onCancel(Task task);
     }
 
     private static final int TYPE_HEADER = 0;
@@ -154,8 +160,19 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         h.title.setText(t.title);
         h.description.setText(t.description);
         h.description.setVisibility(t.description.isEmpty() ? View.GONE : View.VISIBLE);
-        h.period.setText(periods[t.period]);
-        h.period.setVisibility(showPeriod ? View.VISIBLE : View.GONE);
+        // Trabalho com horário: "14:00–15:30" ou "Dia inteiro" no lugar do período
+        if (t.allDay) {
+            h.period.setText(R.string.task_all_day);
+            h.period.setVisibility(View.VISIBLE);
+        } else if (t.hasTime()) {
+            h.period.setText(t.endMinutes > t.startMinutes
+                    ? ctx.getString(R.string.task_time_range, DateUtils.formatTime(t.startMinutes), DateUtils.formatTime(t.endMinutes))
+                    : DateUtils.formatTime(t.startMinutes));
+            h.period.setVisibility(View.VISIBLE);
+        } else {
+            h.period.setText(periods[Math.min(t.period, periods.length - 1)]);
+            h.period.setVisibility(showPeriod ? View.VISIBLE : View.GONE);
+        }
 
         // Aparência a partir das tags reais (sem tags: grafite + faixa da prioridade)
         List<Tag> tags = TagPalette.ordered(tagsByTask.getOrDefault(t.id, Collections.emptyList()));
@@ -164,16 +181,28 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
         // Etiquetas: status, prioridade, atraso e o nome de cada tag
         h.pills.removeAllViews();
-        addPill(h.pills, statuses[t.status], ContextCompat.getColor(ctx, statusColor(t.status)));
-        addPill(h.pills, priorities[t.priority], ContextCompat.getColor(ctx, priorityColor(t.priority)));
-        if (!t.isDone() && t.dueEpochDay < DateUtils.today()) {
+        if (!t.isPersonal()) {
+            String[] types = ctx.getResources().getStringArray(R.array.demand_types);
+            addPill(h.pills, types[Math.max(0, Math.min(types.length - 1, t.demandType))],
+                    ContextCompat.getColor(ctx, R.color.text_secondary));
+        }
+        addPill(h.pills, statuses[Math.max(0, Math.min(statuses.length - 1, t.status))],
+                ContextCompat.getColor(ctx, statusColor(t.status)));
+        if (!t.isCanceled()) {
+            addPill(h.pills, priorities[t.priority], ContextCompat.getColor(ctx, priorityColor(t.priority)));
+        }
+        if (t.postponedFrom > 0 && !t.isClosed()) {
+            addPill(h.pills, ctx.getString(R.string.task_postponed_from, DateUtils.formatDateShortOrYear(t.postponedFrom)),
+                    ContextCompat.getColor(ctx, R.color.highlight));
+        }
+        if (!t.isClosed() && t.dueEpochDay < DateUtils.today()) {
             addPill(h.pills, ctx.getString(R.string.overdue, DateUtils.formatDateShortOrYear(t.dueEpochDay)),
                     ContextCompat.getColor(ctx, R.color.error));
         }
-        for (Tag tag : tags) addPill(h.pills, tag.name, TagColors.color(ctx, tag.colorIndex));
+        for (Tag tag : tags) addPill(h.pills, tag.name, TagColors.color(ctx, tag));
 
-        // Concluídas ficam riscadas e esmaecidas
-        if (t.isDone()) {
+        // Concluídas e canceladas ficam riscadas e esmaecidas
+        if (t.isClosed()) {
             h.title.setPaintFlags(h.title.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
             h.itemView.setAlpha(0.6f);
         } else {
@@ -191,10 +220,18 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         h.more.setOnClickListener(v -> {
             PopupMenu menu = new PopupMenu(v.getContext(), v);
             menu.getMenu().add(0, 1, 0, R.string.edit);
-            menu.getMenu().add(0, 2, 1, R.string.delete);
+            if (!t.isPersonal() && !t.isClosed()) {
+                menu.getMenu().add(0, 3, 1, R.string.task_postpone);
+                menu.getMenu().add(0, 4, 2, R.string.task_cancel);
+            }
+            menu.getMenu().add(0, 2, 3, R.string.delete);
             menu.setOnMenuItemClickListener(item -> {
-                if (item.getItemId() == 1) listener.onEdit(t);
-                else listener.onDelete(t);
+                switch (item.getItemId()) {
+                    case 1: listener.onEdit(t); break;
+                    case 3: listener.onPostpone(t); break;
+                    case 4: listener.onCancel(t); break;
+                    default: listener.onDelete(t); break;
+                }
                 return true;
             });
             menu.show();
@@ -223,6 +260,7 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         switch (status) {
             case Task.STATUS_IN_PROGRESS: return R.color.info;
             case Task.STATUS_DONE: return R.color.success;
+            case Task.STATUS_CANCELED: return R.color.text_secondary;
             default: return R.color.text_secondary;
         }
     }

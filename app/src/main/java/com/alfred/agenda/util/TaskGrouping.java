@@ -19,11 +19,16 @@ public final class TaskGrouping {
     public static final int KIND_TOMORROW = 2;
     public static final int KIND_DATE = 3;
 
-    /** Ordem dentro de um grupo: data, período, pendentes antes das concluídas, prioridade, título. */
+    /**
+     * Ordem dentro de um grupo: data, período, dia inteiro antes das com hora, hora inicial,
+     * pendentes antes das encerradas (concluídas/canceladas), prioridade, título.
+     */
     public static final Comparator<Task> ORDER = Comparator
             .comparingLong((Task t) -> t.dueEpochDay)
             .thenComparingInt(t -> t.period)
-            .thenComparing(Task::isDone)
+            .thenComparing((Task t) -> !t.allDay)
+            .thenComparingInt(t -> t.startMinutes)
+            .thenComparing(Task::isClosed)
             .thenComparing((Task t) -> -t.priority)
             .thenComparing(t -> t.title);
 
@@ -49,7 +54,7 @@ public final class TaskGrouping {
         Section overdue = new Section(KIND_OVERDUE, today - 1);
         for (Task t : sorted) {
             if (t.dueEpochDay < today) {
-                if (!t.isDone()) overdue.tasks.add(t);
+                if (!t.isClosed()) overdue.tasks.add(t);
                 continue;
             }
             Section s = byDay.get(t.dueEpochDay);

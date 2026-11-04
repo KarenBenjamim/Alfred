@@ -49,9 +49,13 @@ public final class TaskAppearance {
         Context ctx = card.getContext();
         card.setStrokeWidth(border ? Math.round(ctx.getResources().getDisplayMetrics().density) : 0);
         int base = ContextCompat.getColor(ctx, R.color.graphite_light);
-        int[] indices = TagPalette.colorIndices(tags);
-
-        if (indices.length == 0) {
+        // Uma cor por tag (Pessoal: paleta; Trabalho: grupo e tom), na ordem de TagPalette, sem repetir
+        List<Integer> distinct = new java.util.ArrayList<>();
+        for (Tag t : TagPalette.ordered(tags)) {
+            int c = TagColors.color(ctx, t);
+            if (!distinct.contains(c)) distinct.add(c);
+        }
+        if (distinct.isEmpty()) {
             content.setBackground(null);
             card.setCardBackgroundColor(base);
             card.setStrokeColor(ContextCompat.getColor(ctx, R.color.outline));
@@ -59,8 +63,8 @@ public final class TaskAppearance {
             return;
         }
 
-        int[] colors = new int[indices.length];
-        for (int i = 0; i < indices.length; i++) colors[i] = TagColors.color(ctx, indices[i]);
+        int[] colors = new int[distinct.size()];
+        for (int i = 0; i < colors.length; i++) colors[i] = distinct.get(i);
         int first = colors[0];
 
         int[] veil;

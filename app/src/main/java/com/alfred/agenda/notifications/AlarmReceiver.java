@@ -63,7 +63,7 @@ public class AlarmReceiver extends BroadcastReceiver {
             }
             case AlarmScheduler.TYPE_TASK: {
                 Task task = db.taskDao().getById(id);
-                if (task == null || task.isDone()) return;
+                if (task == null || task.isClosed()) return;
                 if (task.isPersonal()) {
                     NotificationHelper.show(context, NotificationHelper.CHANNEL_PERSONAL, notificationId,
                             AlfredPhrases.personalTaskTitle(task.title),

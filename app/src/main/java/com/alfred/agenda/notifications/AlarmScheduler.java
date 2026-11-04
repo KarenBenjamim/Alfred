@@ -48,9 +48,9 @@ public class AlarmScheduler {
 
     /** Lembra no dia da entrega, no início do período da tarefa (ver Task.PERIOD_REMINDER_MINUTES). */
     public void scheduleTask(Task task) {
-        long trigger = DateUtils.millisAt(LocalDate.ofEpochDay(task.dueEpochDay),
-                Task.PERIOD_REMINDER_MINUTES[task.period]);
-        if (task.isDone() || trigger <= System.currentTimeMillis()) {
+        // Hora inicial, 08:00 no dia inteiro, ou o início do período (tarefas antigas)
+        long trigger = DateUtils.millisAt(LocalDate.ofEpochDay(task.dueEpochDay), task.reminderMinutes());
+        if (task.isClosed() || trigger <= System.currentTimeMillis()) {
             cancel(TYPE_TASK, task.id);
             return;
         }

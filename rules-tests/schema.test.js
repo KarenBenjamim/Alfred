@@ -107,3 +107,38 @@ test('pausar o cronômetro: soma o tempo por dia e, sem segundos, não manda tem
   assert.deepEqual(S.stopTimerData(start, start + 500, inc), { rodandoDesde: 0 });   // menos de 1 s
   assert.deepEqual(S.stopTimerData(start, start - 60000, inc), { rodandoDesde: 0 }); // relógio adiantado
 });
+
+// ---------- Trabalho: tipo, horário, adiar/cancelar e tags por grupo ----------
+
+test('readTask: campos do Trabalho e documento antigo sem eles', () => {
+  const t = S.readTask(9, { dia: '2026-11-04', status: 3, tipo: 0, diaInteiro: false, inicio: '14:00', fim: '15:30', adiadaDe: '2026-11-02' });
+  assert.equal(t.status, S.STATUS_CANCELED);
+  assert.equal(t.tipo, 0);
+  assert.equal(t.inicio, 14 * 60);
+  assert.equal(t.fim, 15 * 60 + 30);
+  assert.equal(t.adiadaDe, '2026-11-02');
+  assert.ok(S.isClosed(t));
+  const old = S.readTask(1, { dia: '2026-11-04', periodo: 1 });
+  assert.equal(old.tipo, S.TYPE_OTHER);
+  assert.equal(old.inicio, -1);
+  assert.equal(old.adiadaDe, null);
+  assert.equal(S.hasTime(old), false);
+  assert.equal(S.readTask(2, { dia: '2026-11-04', status: 9 }).status, 3); // fora da faixa: limitado
+});
+
+test('periodFor: mesmo agrupamento do Android', () => {
+  assert.equal(S.periodFor(false, 9 * 60), 0);
+  assert.equal(S.periodFor(false, 14 * 60), 1);
+  assert.equal(S.periodFor(true, -1), 0);
+});
+
+test('tags: grupo do Trabalho, tom automático e cor por tema', () => {
+  const projeto = S.readTag(1, { nome: 'Atlas', grupo: 0, cor: 0 });
+  const pessoal = S.readTag(2, { nome: 'Casa', cor: 3 });
+  assert.equal(projeto.grupo, 0);
+  assert.equal(pessoal.grupo, -1);
+  assert.equal(S.readTag(3, { nome: 'x', grupo: 99 }).grupo, -1); // grupo inválido: vira tag do Pessoal
+  assert.equal(S.nextShade(0, [projeto, S.readTag(4, { grupo: 0, cor: 1 })]), 2);
+  assert.equal(S.tagColor(projeto, true), '#7FB0F2');  // azul aberto no escuro
+  assert.equal(S.tagColor(projeto, false), '#1E5AA8'); // azul fechado no claro
+});

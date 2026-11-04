@@ -347,7 +347,7 @@ public class TodayFragment extends Fragment {
         List<Task> work = new ArrayList<>();
         List<Task> personal = new ArrayList<>();
         for (Task t : tasks) {
-            if (t.dueEpochDay != today) continue; // atrasadas não são "do dia"
+            if (t.dueEpochDay != today || t.isCanceled()) continue; // atrasadas e canceladas não são "do dia"
             (t.isPersonal() ? personal : work).add(t);
         }
         int total = work.size() + personal.size();

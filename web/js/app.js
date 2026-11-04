@@ -366,14 +366,14 @@ function greeting() {
 
 /** Tarefa pendente de maior prioridade (mesmo critério do app). */
 function topPending(cat) {
-  return [...state.tasks.values()].filter((t) => t.categoria === cat && t.status !== S.STATUS_DONE)
+  return [...state.tasks.values()].filter((t) => t.categoria === cat && !S.isClosed(t))
     .sort((a, b) => b.prioridade - a.prioridade || a.dia.localeCompare(b.dia) || a.periodo - b.periodo
-      || a.titulo.localeCompare(b.titulo))[0];
+      || Number(!a.diaInteiro) - Number(!b.diaInteiro) || a.inicio - b.inicio || a.titulo.localeCompare(b.titulo))[0];
 }
 
 function renderHome() {
   const t = today();
-  const todayTasks = [...state.tasks.values()].filter((x) => x.dia === t);
+  const todayTasks = [...state.tasks.values()].filter((x) => x.dia === t && x.status !== S.STATUS_CANCELED); // cancelada não conta
   const habitsDone = [...state.habits.values()].filter((x) => x.feitos.includes(t)).length;
   const mealsDone = [...state.meals.values()].filter((x) => x.feitas.includes(t)).length;
   const next = (cat, label) => {
@@ -381,7 +381,7 @@ function renderHome() {
     return h('div', { class: 'card', role: 'button', tabindex: '0', onclick: () => go(cat) },
       h('p', { class: 'caption' }, label),
       task ? [h('p', { class: task.dia < t ? 'error' : 'gold' }, task.dia < t ? `Atrasada desde ${S.formatDay(task.dia, t)}`
-        : `${S.formatDay(task.dia, t)} · ${S.PERIODS[task.periodo]}`), h('p', {}, task.titulo)]
+        : `${S.formatDay(task.dia, t)} · ${whenText(task)}`), h('p', {}, task.titulo)]
         : h('p', { class: 'muted' }, voc(`Nada pendente, {voc}.`)));
   };
   const count = (cat) => {
@@ -403,20 +403,36 @@ const stat = (label, value) => h('div', {}, h('p', { class: 'caption' }, label),
 
 // ===================== Trabalho e Pessoal =====================
 
+/** Tema escuro em uso? (as cores das tags de Trabalho têm um tom para cada tema) */
+const isDark = () => {
+  const forced = document.documentElement.dataset.theme;
+  return forced ? forced === 'dark' : !matchMedia('(prefers-color-scheme: light)').matches;
+};
+
+/** "14:00–15:30", "Dia inteiro" ou o período (tarefas sem hora). */
+function whenText(task) {
+  if (task.diaInteiro) return 'Dia inteiro';
+  if (S.hasTime(task)) return task.fim > task.inicio ? `${S.time(task.inicio)}–${S.time(task.fim)}` : S.time(task.inicio);
+  return S.PERIODS[task.periodo];
+}
+
+/** Mesma ordem do app: dia, período, dia inteiro antes das com hora, hora, prioridade. */
+const taskOrder = (a, b) => a.dia.localeCompare(b.dia) || a.periodo - b.periodo
+  || Number(!a.diaInteiro) - Number(!b.diaInteiro) || a.inicio - b.inicio || b.prioridade - a.prioridade;
+
 function renderTasks(cat) {
   const t = today();
-  const all = [...state.tasks.values()].filter((x) => x.categoria === cat)
-    .sort((a, b) => a.dia.localeCompare(b.dia) || a.periodo - b.periodo || b.prioridade - a.prioridade);
-  const open = all.filter((x) => x.status !== S.STATUS_DONE);
+  const all = [...state.tasks.values()].filter((x) => x.categoria === cat).sort(taskOrder);
+  const open = all.filter((x) => !S.isClosed(x));
   const groups = [
     ['Atrasadas', open.filter((x) => x.dia < t)],
     ['Hoje', open.filter((x) => x.dia === t)],
     ['Próximos dias', open.filter((x) => x.dia > t)],
-    ['Concluídas', all.filter((x) => x.status === S.STATUS_DONE).reverse().slice(0, 30)],
+    ['Concluídas e canceladas', all.filter((x) => S.isClosed(x)).reverse().slice(0, 30)],
   ];
   return h('div', {},
     h('div', { class: 'actions' },
-      cat === 'pessoal' ? h('button', { class: 'secondary', onclick: () => editTag(null) }, 'Tags') : null,
+      h('button', { class: 'secondary', onclick: () => editTag(null, cat) }, 'Tags'),
       h('button', { class: 'primary', onclick: () => editTask(null, cat) }, '+ Nova tarefa')),
     all.length === 0 ? h('p', { class: 'empty' }, voc('Nenhuma tarefa ainda, {voc}.')) : null,
     groups.filter(([, list]) => list.length).map(([title, list]) =>
@@ -425,46 +441,92 @@ function renderTasks(cat) {
 
 function taskItem(task, t) {
   const done = task.status === S.STATUS_DONE;
+  const closed = S.isClosed(task);
+  const canceled = task.status === S.STATUS_CANCELED;
   const tags = task.tags.map((id) => state.tags.get(id)).filter(Boolean);
-  return h('div', { class: `item${done ? ' done' : ''}` },
+  const dark = isDark();
+  return h('div', { class: `item${closed ? ' done' : ''}` },
+    tags.length ? h('span', { class: 'stripe', style: { background: S.tagColor(tags[0], dark) } }) : null,
     h('input', { type: 'checkbox', checked: done, 'aria-label': `Concluir ${task.titulo}`, style: { width: '20px', margin: 0 },
       onchange: (e) => write(setDoc(ref(S.COL.TASKS, task.id), { status: e.target.checked ? S.STATUS_DONE : 0 }, { merge: true })) }),
     h('div', { class: 'main', role: 'button', tabindex: '0', onclick: () => editTask(task, task.categoria) },
       h('div', { class: 'title' }, task.titulo),
       task.descricao ? h('div', { class: 'caption' }, task.descricao) : null,
       h('div', { class: 'pills' },
-        h('span', { class: `pill${!done && task.dia < t ? ' overdue' : ''}` }, `${S.formatDay(task.dia, t)} · ${S.PERIODS[task.periodo]}`),
+        h('span', { class: `pill${!closed && task.dia < t ? ' overdue' : ''}` }, `${S.formatDay(task.dia, t)} · ${whenText(task)}`),
+        task.categoria === 'trabalho' ? h('span', { class: 'pill' }, S.DEMAND_TYPES[task.tipo]) : null,
         h('span', { class: 'pill' }, S.STATUSES[task.status]),
-        h('span', { class: `pill${task.prioridade === 2 ? ' high' : ''}` }, S.PRIORITIES[task.prioridade]),
-        tags.map((tag) => h('span', { class: 'pill', style: { color: S.TAG_COLORS[tag.cor][1] } }, tag.nome)))));
+        canceled ? null : h('span', { class: `pill${task.prioridade === 2 ? ' high' : ''}` }, S.PRIORITIES[task.prioridade]),
+        task.adiadaDe && !closed ? h('span', { class: 'pill gold' }, `Adiada de ${S.formatDay(task.adiadaDe, t)}`) : null,
+        tags.map((tag) => h('span', { class: 'pill', style: { color: S.tagColor(tag, dark) } }, tag.nome)))));
 }
 
 function editTask(task, cat) {
-  const periods = cat === 'trabalho' ? 2 : 3;
+  const work = cat === 'trabalho';
   const title = h('input', { maxlength: '120', required: true, value: task?.titulo ?? '' });
   const desc = h('textarea', { maxlength: '1000' }, task?.descricao ?? '');
   const day = h('input', { type: 'date', value: task?.dia ?? today(), required: true });
-  const period = h('select', {}, S.PERIODS.slice(0, periods).map((p, i) => h('option', { value: i, selected: i === Math.min(task?.periodo ?? 0, periods - 1) }, p)));
+  const period = h('select', {}, S.PERIODS.slice(0, 3).map((p, i) => h('option', { value: i, selected: i === (task?.periodo ?? 0) }, p)));
   const prio = h('select', {}, S.PRIORITIES.map((p, i) => h('option', { value: i, selected: i === (task?.prioridade ?? 1) }, p)));
   const status = h('select', {}, S.STATUSES.map((p, i) => h('option', { value: i, selected: i === (task?.status ?? 0) }, p)));
-  const tagBoxes = cat === 'pessoal' ? h('div', { class: 'pills' }, [...state.tags.values()].map((tag) =>
-    h('label', { class: 'check' }, h('input', { type: 'checkbox', value: tag.id, checked: task?.tags.includes(tag.id) }), tag.nome))) : null;
+  // Trabalho: tipo de demanda e horário (dia inteiro ou início/fim). Tarefa antiga sem hora começa no período dela.
+  const type = h('select', {}, S.DEMAND_TYPES.map((p, i) => h('option', { value: i, selected: i === (task?.tipo ?? S.TYPE_OTHER) }, p)));
+  const allDay = h('input', { type: 'checkbox', checked: !!task?.diaInteiro });
+  const startMin = task && task.inicio >= 0 ? task.inicio : [8 * 60, 13 * 60, 18 * 60][task?.periodo ?? 0];
+  const start = h('input', { type: 'time', value: S.time(startMin) });
+  const end = h('input', { type: 'time', value: S.time(task && task.fim > startMin ? task.fim : Math.min(24 * 60 - 1, startMin + 60)) });
+  const times = h('div', { class: 'row' }, field('Início', start), field('Fim', end));
+  times.hidden = allDay.checked;
+  allDay.onchange = () => { times.hidden = allDay.checked; };
+  const areaTags = [...state.tags.values()].filter((tg) => (tg.grupo >= 0) === work);
+  const tagBoxes = h('div', { class: 'pills' }, areaTags.map((tag) =>
+    h('label', { class: 'check', style: { color: S.tagColor(tag, isDark()) } },
+      h('input', { type: 'checkbox', value: tag.id, checked: task?.tags.includes(tag.id) }), tag.nome)));
   const err = h('p', { class: 'error' });
+
+  /** Lê o formulário; null = inválido (o erro aparece no diálogo). */
+  const collect = () => {
+    if (!title.value.trim()) { err.textContent = 'Informe o título.'; return null; }
+    if (!S.parseDay(day.value)) { err.textContent = 'Informe um dia válido.'; return null; }
+    const data = {
+      titulo: title.value.trim(), descricao: desc.value.trim(), dia: day.value, prioridade: Number(prio.value),
+      status: Number(status.value), categoria: cat, periodo: Number(period.value),
+      tags: [...tagBoxes.querySelectorAll('input:checked')].map((c) => Number(c.value)),
+      adiadaDe: task?.adiadaDe ?? null,
+    };
+    if (work) {
+      const s0 = S.parseTime(start.value, -1);
+      const e0 = S.parseTime(end.value, -1);
+      if (!allDay.checked && !(s0 >= 0 && e0 > s0)) { err.textContent = 'O fim precisa ser depois do início.'; return null; }
+      Object.assign(data, {
+        tipo: Number(type.value), diaInteiro: allDay.checked,
+        inicio: allDay.checked ? null : start.value, fim: allDay.checked ? null : end.value,
+        periodo: S.periodFor(allDay.checked, allDay.checked ? -1 : s0),
+      });
+    }
+    return data;
+  };
+  const save = (data) => write(setDoc(ref(S.COL.TASKS, task?.id ?? S.newId()), data, { merge: true }));
+
   openDialog(task ? 'Editar tarefa' : 'Nova tarefa',
     h('div', {}, field('Título', title), field('Descrição', desc),
-      h('div', { class: 'row' }, field('Dia', day), field('Período', period)),
+      work ? field('Tipo de demanda', type) : null,
+      h('div', { class: 'row' }, field('Dia', day), work ? null : field('Período', period)),
+      work ? [h('label', { class: 'check' }, allDay, 'Dia inteiro'), times] : null,
       h('div', { class: 'row' }, field('Prioridade', prio), field('Status', status)),
-      tagBoxes && state.tags.size ? [h('label', {}, 'Tags'), tagBoxes] : null, err),
+      areaTags.length ? [h('label', {}, 'Tags'), tagBoxes] : null,
+      // Adiar: o compromisso não ocorreu; pergunta a nova data e volta a ficar pendente
+      work && task && !S.isClosed(task) ? h('div', { class: 'actions' },
+        h('button', { type: 'button', class: 'secondary', onclick: () => {
+          const data = collect();
+          if (data) postponeTask(task, data, save);
+        } }, 'Adiar')) : null,
+      err),
     {
       onSave: () => {
-        if (!title.value.trim()) { err.textContent = 'Informe o título.'; return false; }
-        if (!S.parseDay(day.value)) { err.textContent = 'Informe um dia válido.'; return false; }
-        const id = task?.id ?? S.newId();
-        const tags = tagBoxes ? [...tagBoxes.querySelectorAll('input:checked')].map((c) => Number(c.value)) : (task?.tags ?? []);
-        write(setDoc(ref(S.COL.TASKS, id), {
-          titulo: title.value.trim(), descricao: desc.value.trim(), dia: day.value, prioridade: Number(prio.value),
-          status: Number(status.value), categoria: cat, periodo: Number(period.value), tags,
-        }));
+        const data = collect();
+        if (!data) return false;
+        save(data);
         return true;
       },
       onDelete: task ? () => confirmDelete(task.titulo, 'A tarefa será apagada no celular e na web.',
@@ -472,23 +534,52 @@ function editTask(task, cat) {
     });
 }
 
-function editTag(tag) {
+/** Pergunta a nova data, guarda o dia original (na primeira vez) e volta a ficar pendente. */
+function postponeTask(task, data, save) {
+  const next = h('input', { type: 'date', value: S.addDays(task.dia > today() ? task.dia : today(), 1), required: true });
+  openDialog('Adiada para quando?', field('Nova data', next), {
+    saveLabel: 'Adiar',
+    onSave: () => {
+      if (!S.parseDay(next.value) || next.value === task.dia) return false;
+      save({ ...data, dia: next.value, adiadaDe: task.adiadaDe ?? task.dia, status: 0 });
+      toast(voc(`Adiada para ${S.formatDay(next.value)}, {voc}.`));
+      return true;
+    },
+  });
+}
+
+/** Tags da área: Pessoal (paleta de 8 cores) ou Trabalho (grupo define a cor; o tom é automático). */
+function editTag(tag, cat) {
+  const work = cat === 'trabalho';
+  const dark = isDark();
   if (!tag) {
-    // Lista de tags + criar
-    openDialog('Tags', h('div', {},
-      state.tags.size ? [...state.tags.values()].map((t) => h('div', { class: 'item' },
-        h('span', { class: 'stripe', style: { background: S.TAG_COLORS[t.cor][1] } }),
-        h('div', { class: 'main' }, t.nome), h('button', { type: 'button', class: 'text', onclick: () => editTag(t) }, 'Editar')))
+    const list = [...state.tags.values()].filter((t) => (t.grupo >= 0) === work);
+    openDialog(work ? 'Tags do Trabalho' : 'Tags', h('div', {},
+      list.length ? list.map((t) => h('div', { class: 'item' },
+        h('span', { class: 'stripe', style: { background: S.tagColor(t, dark) } }),
+        h('div', { class: 'main' }, t.nome, work ? h('div', { class: 'caption' }, S.WORK_GROUPS[t.grupo][0]) : null),
+        h('button', { type: 'button', class: 'text', onclick: () => editTag(t, cat) }, 'Editar')))
         : h('p', { class: 'empty' }, 'Nenhuma tag ainda.'),
-      h('button', { type: 'button', class: 'secondary', onclick: () => editTag({}) }, '+ Nova tag')));
+      h('button', { type: 'button', class: 'secondary', onclick: () => editTag({}, cat) }, '+ Nova tag')));
     return;
   }
   const name = h('input', { maxlength: '24', required: true, value: tag.nome ?? '' });
-  const color = h('select', {}, S.TAG_COLORS.map(([n], i) => h('option', { value: i, selected: i === (tag.cor ?? 0) }, n)));
-  openDialog(tag.id ? 'Editar tag' : 'Nova tag', h('div', {}, field('Nome', name), field('Cor', color)), {
+  const color = work
+    ? h('select', {}, S.WORK_GROUPS.map(([n], i) => h('option', { value: i, selected: i === (tag.grupo >= 0 ? tag.grupo : 0) }, n)))
+    : h('select', {}, S.TAG_COLORS.map(([n], i) => h('option', { value: i, selected: i === (tag.cor ?? 0) }, n)));
+  openDialog(tag.id ? 'Editar tag' : 'Nova tag', h('div', {}, field('Nome', name), field(work ? 'Grupo (define a cor)' : 'Cor', color)), {
     onSave: () => {
       if (!name.value.trim()) return false;
-      write(setDoc(ref(S.COL.TAGS, tag.id ?? S.newId()), { nome: name.value.trim(), cor: Number(color.value) }));
+      let data;
+      if (work) {
+        const grupo = Number(color.value);
+        // Tom novo só se a tag é nova ou mudou de grupo: o menos usado no grupo
+        const cor = tag.id && tag.grupo === grupo ? tag.cor : S.nextShade(grupo, [...state.tags.values()], tag.id ?? 0);
+        data = { nome: name.value.trim(), grupo, cor };
+      } else {
+        data = { nome: name.value.trim(), cor: Number(color.value), grupo: -1 };
+      }
+      write(setDoc(ref(S.COL.TAGS, tag.id ?? S.newId()), data));
       return true;
     },
     onDelete: tag.id ? () => {
