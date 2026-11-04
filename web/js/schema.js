@@ -227,6 +227,29 @@ export function readMeal(id, d) {
   };
 }
 
+/** "Lanche - Opção 2" -> "Lanche" (igual ao MealGroups do Android). */
+export function mealBaseName(name) {
+  return name.replace(/\s*[-–]\s*Opção\s*\d+\s*$/u, '');
+}
+
+/** "Lanche - Opção 2" -> "Opção 2" (ou o nome inteiro). */
+export function mealOptionLabel(name) {
+  const m = name.match(/Opção\s*\d+/u);
+  return m ? m[0] : name;
+}
+
+/** Junta as opções do mesmo horário e nome-base num grupo só, na ordem recebida. */
+export function groupMeals(meals) {
+  const map = new Map();
+  for (const m of meals) {
+    const name = mealBaseName(m.nome);
+    const key = `${m.minutos}|${name}`;
+    if (!map.has(key)) map.set(key, { name, minutos: m.minutos, options: [] });
+    map.get(key).options.push(m);
+  }
+  return [...map.values()];
+}
+
 function readEaten(raw) {
   const out = {};
   if (raw && typeof raw === 'object') for (const [day, text] of Object.entries(raw)) if (parseDay(day) && typeof text === 'string' && text.trim()) out[day] = text;

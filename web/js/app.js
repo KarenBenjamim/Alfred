@@ -845,48 +845,91 @@ const openMeals = new Set();
 
 function renderDiet() {
   const t = today();
-  const meals = [...state.meals.values()].sort((a, b) => a.minutos - b.minutos);
+  const groups = S.groupMeals([...state.meals.values()].sort((a, b) => a.minutos - b.minutos || a.nome.localeCompare(b.nome)));
   const plan = state.plan;
   return h('div', {},
     plan ? h('p', { class: 'caption' }, `Planilha: ${plan.source || '—'}`) : null,
-    meals.length === 0 ? h('div', { class: 'card' }, h('p', {}, 'Nenhuma refeição ainda.'),
+    groups.length === 0 ? h('div', { class: 'card' }, h('p', {}, 'Nenhuma refeição ainda.'),
       h('p', { class: 'caption' }, 'A planilha da nutricionista é importada pelo app Android (Configurações > Importar planilha da dieta).')) : null,
-    meals.length ? h('h2', {}, `Refeições de hoje · ${meals.filter((m) => m.feitas.includes(t)).length}/${meals.length}`) : null,
-    meals.map((m) => mealCard(m, t)),
+    groups.length ? h('h2', {}, `Refeições de hoje · ${groups.filter((g) => doneOption(g, t)).length}/${groups.length}`) : null,
+    groups.map((g) => mealCard(g, t)),
     plan ? fullPlan(plan) : null);
 }
 
-/** Fechado: horário, nome e "feita hoje". Aberto: alimentos e opções, orientação e "O que comi". */
-function mealCard(m, t) {
-  const done = m.feitas.includes(t);
-  const eaten = m.comido[t] || '';
-  const card = h('details', { class: `card meal${done ? ' done' : ''}`, open: openMeals.has(m.id) },
+const doneOption = (g, t) => g.options.find((o) => o.feitas.includes(t)) || null;
+
+/** Onde fica o "o que comi": a opção feita, a que já tem texto ou a 1ª. */
+const eatenTarget = (g, t) => doneOption(g, t) || g.options.find((o) => o.comido[t]) || g.options[0];
+
+/** Marca a opção do dia e desmarca as outras do horário; o "o que comi" vem junto. */
+function chooseOption(g, option, t) {
+  const eaten = eatenTarget(g, t).comido[t] || '';
+  const batch = writeBatch(db);
+  for (const o of g.options) {
+    if (o !== option) batch.set(ref(S.COL.MEALS, o.id), { feitas: arrayRemove(t), comido: { [t]: deleteField() } }, { merge: true });
+  }
+  batch.set(ref(S.COL.MEALS, option.id), { feitas: arrayUnion(t), comido: { [t]: eaten || deleteField() } }, { merge: true });
+  write(batch.commit());
+}
+
+function clearDay(g, t) {
+  const batch = writeBatch(db);
+  for (const o of g.options) batch.set(ref(S.COL.MEALS, o.id), { feitas: arrayRemove(t), comido: { [t]: deleteField() } }, { merge: true });
+  write(batch.commit());
+}
+
+/** Fechado: horário, nome e "feita hoje". Aberto: as opções (qual foi feita, alimentos), "O que comi". */
+function mealCard(g, t) {
+  const single = g.options.length === 1;
+  const title = single ? g.options[0].nome : g.name;
+  const done = doneOption(g, t);
+  const target = eatenTarget(g, t);
+  const eaten = target.comido[t] || '';
+  const key = g.options[0].id;
+  const summary = eaten ? `Comi: ${eaten}` : single ? '' : done ? `Feita: ${S.mealOptionLabel(done.nome)}` : `${g.options.length} opções`;
+  const card = h('details', { class: `card meal${done ? ' done' : ''}`, open: openMeals.has(key) },
     h('summary', { class: 'card-head' },
-      h('input', { type: 'checkbox', checked: done, style: { width: '20px', margin: 0 }, 'aria-label': `${m.nome} feita hoje`,
-        onclick: (e) => e.stopPropagation(), // marcar não abre/fecha o cartão
-        onchange: (e) => write(setDoc(ref(S.COL.MEALS, m.id), e.target.checked ? { feitas: arrayUnion(t) }
-          : { feitas: arrayRemove(t), comido: { [t]: deleteField() } }, { merge: true })) }),
-      h('div', { class: 'main' }, h('h3', {}, `${S.time(m.minutos)} · ${m.nome}`),
-        eaten ? h('p', { class: 'caption' }, `Comi: ${eaten}`) : null)),
-    m.itens.map((it) => h('div', {},
-      h('div', { class: 'food' }, h('span', {}, it.alimento), h('span', { class: 'muted' }, it.quantidade)),
-      it.substituicoes ? h('details', {}, h('summary', {}, 'Opções de substituição'),
-        h('p', { class: 'caption', style: { whiteSpace: 'pre-line' } }, it.substituicoes)) : null)),
-    m.observacoes ? h('p', { class: 'caption gold' }, m.observacoes) : null,
-    eatenForm(m, t, eaten),
-    h('div', { class: 'actions' }, h('button', { class: 'text', onclick: () => editMeal(m) }, 'Editar refeição do plano')));
-  card.addEventListener('toggle', () => { if (card.open) openMeals.add(m.id); else openMeals.delete(m.id); });
+      h('input', { type: 'checkbox', checked: !!done, style: { width: '20px', margin: 0 }, 'aria-label': `${title} feita hoje`,
+        onclick: (e) => {
+          e.stopPropagation(); // marcar não abre/fecha o cartão
+          if (done) clearDay(g, t);
+          else if (single) chooseOption(g, g.options[0], t);
+          else { e.preventDefault(); card.open = true; toast('Escolha qual opção foi feita.'); }
+        } }),
+      h('div', { class: 'main' }, h('h3', {}, `${S.time(g.minutos)} · ${title}`),
+        summary ? h('p', { class: 'caption' }, summary) : null)),
+    g.options.map((o) => optionBlock(g, o, t, single, o === done)),
+    eatenForm(g, target, t, eaten));
+  card.addEventListener('toggle', () => { if (card.open) openMeals.add(key); else openMeals.delete(key); });
   return card;
 }
 
-/** "O que comi de verdade": salvar marca a refeição como feita hoje; vazio apaga o texto. */
-function eatenForm(m, t, eaten) {
-  const box = h('textarea', { maxlength: '500', placeholder: 'Ex.: troquei o arroz por batata-doce', 'aria-label': `O que comi em ${m.nome}` }, eaten);
+function optionBlock(g, o, t, single, isDone) {
+  const label = S.mealOptionLabel(o.nome);
+  return h('div', { class: single ? '' : 'meal-option' },
+    single ? null : h('label', { class: 'check' }, h('input', { type: 'radio', name: `meal-${g.options[0].id}`, checked: isDone,
+      onclick: () => (isDone ? clearDay(g, t) : chooseOption(g, o, t)) }), ` ${label}`),
+    o.itens.map((it) => h('div', {},
+      h('div', { class: 'food' }, h('span', {}, it.alimento), h('span', { class: 'muted' }, it.quantidade)),
+      it.substituicoes ? h('details', {}, h('summary', {}, 'Opções de substituição'),
+        h('p', { class: 'caption', style: { whiteSpace: 'pre-line' } }, it.substituicoes)) : null)),
+    o.observacoes ? h('p', { class: 'caption gold' }, o.observacoes) : null,
+    h('div', { class: 'actions' }, h('button', { class: 'text', onclick: () => editMeal(o) }, single ? 'Editar refeição do plano' : `Editar ${label}`)));
+}
+
+/** "O que comi de verdade": salvar marca a opção como feita hoje (e desmarca as outras); vazio apaga o texto. */
+function eatenForm(g, target, t, eaten) {
+  const box = h('textarea', { maxlength: '500', placeholder: 'Ex.: troquei o arroz por batata-doce', 'aria-label': `O que comi em ${g.name}` }, eaten);
   return h('div', {},
     h('label', {}, 'O que comi de verdade'), box,
     h('div', { class: 'actions' }, h('button', { class: 'secondary', onclick: () => {
       const text = box.value.trim();
-      write(setDoc(ref(S.COL.MEALS, m.id), { feitas: arrayUnion(t), comido: { [t]: text || deleteField() } }, { merge: true }));
+      const batch = writeBatch(db);
+      for (const o of g.options) {
+        if (o !== target) batch.set(ref(S.COL.MEALS, o.id), { feitas: arrayRemove(t), comido: { [t]: deleteField() } }, { merge: true });
+      }
+      batch.set(ref(S.COL.MEALS, target.id), { feitas: arrayUnion(t), comido: { [t]: text || deleteField() } }, { merge: true });
+      write(batch.commit());
       toast(voc('Anotado, {voc}.'));
     } }, 'Salvar o que comi')));
 }

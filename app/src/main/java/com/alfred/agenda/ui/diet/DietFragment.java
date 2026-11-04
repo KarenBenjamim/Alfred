@@ -36,6 +36,7 @@ import com.alfred.agenda.data.entity.MealWithItems;
 import com.alfred.agenda.util.DateUtils;
 import com.alfred.agenda.util.EmptyState;
 import com.alfred.agenda.util.Honorific;
+import com.alfred.agenda.util.MealGroups;
 import com.alfred.agenda.util.UiUtils;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
@@ -76,6 +77,7 @@ public class DietFragment extends Fragment {
     private View mealsEmpty;
     private View mealsTitle;
     private int mealCount;
+    private MealAdapter adapter;
 
     /** Seletor de arquivos do sistema (não precisa de permissão de armazenamento). */
     private final ActivityResultLauncher<String[]> pickSpreadsheet =
@@ -138,10 +140,34 @@ public class DietFragment extends Fragment {
             }
 
             @Override
-            public void onDoneChanged(MealWithItems meal, boolean done) {
-                viewModel.setDone(meal.meal.id, done, done ? () -> {
-                    if (isAdded()) ((MainActivity) requireActivity()).celebrateGoal();
-                } : null);
+            public void onDoneChanged(MealGroups.Group group, boolean done) {
+                if (!done) {
+                    // Desmarcar a refeição desmarca todas as opções feitas hoje
+                    for (MealWithItems o : group.options) viewModel.setDone(o.meal.id, false, null);
+                } else if (group.options.size() == 1) {
+                    choose(group, group.options.get(0));
+                } else {
+                    // Várias opções: pergunta qual foi (cancelar desfaz a marcação)
+                    CharSequence[] labels = new CharSequence[group.options.size()];
+                    for (int i = 0; i < labels.length; i++) labels[i] = MealGroups.optionLabel(group.options.get(i).meal.name);
+                    boolean[] picked = {false};
+                    new MaterialAlertDialogBuilder(requireContext())
+                            .setTitle(Honorific.str(requireContext(), R.string.meal_option_pick_title))
+                            .setItems(labels, (d, which) -> {
+                                picked[0] = true;
+                                choose(group, group.options.get(which));
+                            })
+                            .setNegativeButton(R.string.cancel, null)
+                            .setOnDismissListener(d -> {
+                                if (!picked[0]) adapter().notifyDataSetChanged();
+                            })
+                            .show();
+                }
+            }
+
+            @Override
+            public void onOptionChosen(MealGroups.Group group, MealWithItems option) {
+                choose(group, option);
             }
 
             @Override
@@ -150,7 +176,7 @@ public class DietFragment extends Fragment {
             }
 
             @Override
-            public void onEaten(MealWithItems meal, String current) {
+            public void onEaten(MealGroups.Group group, MealWithItems meal, String current) {
                 // Texto livre, até 500 caracteres; salvar marca a refeição como feita hoje
                 View box = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_text_input, null);
                 com.google.android.material.textfield.TextInputLayout layout = box.findViewById(R.id.layout_text);
@@ -161,7 +187,7 @@ public class DietFragment extends Fragment {
                 input.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(500)});
                 input.setText(current);
                 new MaterialAlertDialogBuilder(requireContext())
-                        .setTitle(getString(R.string.meal_eaten_title) + " · " + meal.meal.name)
+                        .setTitle(getString(R.string.meal_eaten_title) + " · " + MealGroups.baseName(meal.meal.name))
                         .setView(box)
                         .setNegativeButton(R.string.cancel, null)
                         .setPositiveButton(R.string.save, (d, w) -> viewModel.setEaten(meal.meal.id, UiUtils.text(input), () -> {
@@ -172,6 +198,7 @@ public class DietFragment extends Fragment {
             }
         });
         list.setAdapter(adapter);
+        this.adapter = adapter;
 
         viewModel.meals.observe(getViewLifecycleOwner(), meals -> {
             mealCount = meals.size();
@@ -201,6 +228,26 @@ public class DietFragment extends Fragment {
         } else if (savedInstanceState == null && !plan.isImported()) {
             askImportOnce();
         }
+    }
+
+    private MealAdapter adapter() {
+        return adapter;
+    }
+
+    /**
+     * Marca a opção feita hoje e desmarca as outras do mesmo horário. O "o que comi" já
+     * registrado em outra opção vem junto para a escolhida.
+     */
+    private void choose(MealGroups.Group group, MealWithItems option) {
+        String eaten = adapter.eatenOf(group);
+        for (MealWithItems o : group.options) {
+            if (o != option) viewModel.setDone(o.meal.id, false, null);
+        }
+        Runnable celebrate = () -> {
+            if (isAdded()) ((MainActivity) requireActivity()).celebrateGoal();
+        };
+        if (eaten.isEmpty()) viewModel.setDone(option.meal.id, true, celebrate);
+        else viewModel.setEaten(option.meal.id, eaten, celebrate);
     }
 
     @Override

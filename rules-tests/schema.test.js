@@ -151,3 +151,11 @@ test('readMeal: "comido" por dia e dia com texto conta como feito', () => {
   assert.ok(m.feitas.includes('2026-11-03'));
   assert.deepEqual(S.readMeal(6, { nome: 'Lanche' }).comido, {});
 });
+
+test('opções do mesmo horário viram uma refeição só (igual ao MealGroups do Android)', () => {
+  const m = (id, nome, minutos) => ({ id, nome, minutos });
+  const g = S.groupMeals([m(1, 'Lanche - Opção 1', 960), m(2, 'Lanche - Opção 2', 960), m(3, 'Jantar - Opção 1', 1200), m(4, 'Almoço', 720)]);
+  assert.deepEqual(g.map((x) => [x.name, x.options.length]), [['Lanche', 2], ['Jantar', 1], ['Almoço', 1]]);
+  assert.equal(S.mealOptionLabel('Lanche - Opção 2'), 'Opção 2');
+  assert.equal(S.mealBaseName('Almoço'), 'Almoço');
+});

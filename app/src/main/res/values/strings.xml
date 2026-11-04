@@ -352,6 +352,15 @@
     <string name="meal_eaten_saved">Anotado, {voc}.</string>
     <string name="meal_edit_plan">Editar refeição do plano</string>
     <string name="diet_full_plan">Plano completo</string>
+    <string name="meal_option_done">Feita: %1$s</string>
+    <plurals name="meal_option_count">
+        <item quantity="one">%d opção</item>
+        <item quantity="other">%d opções</item>
+    </plurals>
+    <string name="meal_option_choose">Fiz a %1$s</string>
+    <string name="meal_option_edit">Editar %1$s</string>
+    <string name="meal_option_delete">Excluir %1$s</string>
+    <string name="meal_option_pick_title">Qual opção, {voc}?</string>
 
     <!-- Dieta -->
     <string name="meal_new">Nova refeição</string>
