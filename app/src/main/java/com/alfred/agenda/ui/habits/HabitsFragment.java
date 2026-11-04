@@ -1,6 +1,7 @@
 package com.alfred.agenda.ui.habits;
 
 import android.os.Bundle;
+import android.text.InputType;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,17 +23,16 @@ import com.alfred.agenda.data.entity.HabitLog;
 import com.alfred.agenda.ui.common.WaterGlassView;
 import com.alfred.agenda.util.AlfredPhrases;
 import com.alfred.agenda.util.DateUtils;
-import com.alfred.agenda.util.Honorific;
-import com.alfred.agenda.util.WaterGoal;
 import com.alfred.agenda.util.EmptyState;
+import com.alfred.agenda.util.Honorific;
 import com.alfred.agenda.util.UiUtils;
+import com.alfred.agenda.util.WaterGoal;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.google.android.material.textfield.TextInputLayout;
 
 import java.text.NumberFormat;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -172,7 +172,7 @@ public class HabitsFragment extends Fragment {
         EditText input = content.findViewById(R.id.input_text);
         layout.setHint(R.string.water_adjust_hint);
         layout.setSuffixText(getString(R.string.unit_ml));
-        input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        input.setInputType(InputType.TYPE_CLASS_NUMBER);
         input.setText(String.valueOf(waterMl));
         AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.water_adjust_title)

@@ -1,6 +1,8 @@
 package com.alfred.agenda.data;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 
 import androidx.annotation.Nullable;
 
@@ -615,7 +617,7 @@ public final class CloudSync {
             return;
         }
         Context app = ctx.getApplicationContext();
-        android.os.Handler main = new android.os.Handler(android.os.Looper.getMainLooper());
+        Handler main = new Handler(Looper.getMainLooper());
         boolean[] finished = {false};
         Runnable finish = () -> {
             if (finished[0]) return;

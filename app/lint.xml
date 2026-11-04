@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <!-- "%1$d de %2$d concluídas", "%1$d/%2$d hoje": contagens "x de y", sempre no plural
+         em português; um <plurals> aqui não muda nenhum texto mostrado. -->
+    <issue id="PluralsCandidate" severity="ignore" />
+</lint>

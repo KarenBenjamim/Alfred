@@ -1,5 +1,6 @@
 package com.alfred.agenda.ui.settings;
 
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -8,6 +9,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.text.InputType;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,13 +28,13 @@ import androidx.fragment.app.Fragment;
 
 import com.alfred.agenda.MainActivity;
 import com.alfred.agenda.R;
-import com.alfred.agenda.util.Honorific;
 import com.alfred.agenda.account.AccountStore;
 import com.alfred.agenda.data.AlfredRepository;
 import com.alfred.agenda.data.LocalBackup;
 import com.alfred.agenda.data.NutritionPlan;
 import com.alfred.agenda.notifications.AlarmScheduler;
 import com.alfred.agenda.notifications.NotificationHelper;
+import com.alfred.agenda.util.Honorific;
 import com.alfred.agenda.util.ThemePrefs;
 import com.alfred.agenda.util.UiUtils;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -252,7 +254,7 @@ public class SettingsFragment extends Fragment {
                 .show();
     }
 
-    private void runImport(android.net.Uri uri) {
+    private void runImport(Uri uri) {
         View progress = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_progress, null);
         AlertDialog wait = new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.backup_import_progress)
@@ -335,13 +337,13 @@ public class SettingsFragment extends Fragment {
         valueView.setVisibility(value == null ? View.GONE : View.VISIBLE);
         row.findViewById(R.id.chevron).setVisibility(action == null ? View.GONE : View.VISIBLE);
         if (action != null) {
-            android.util.TypedValue tv = new android.util.TypedValue();
+            TypedValue tv = new TypedValue();
             requireContext().getTheme().resolveAttribute(android.R.attr.selectableItemBackground, tv, true);
             row.setBackgroundResource(tv.resourceId);
             row.setOnClickListener(v -> {
                 try {
                     action.run();
-                } catch (android.content.ActivityNotFoundException e) {
+                } catch (ActivityNotFoundException e) {
                     UiUtils.toast(requireContext(), getString(R.string.state_error_title));
                 }
             });

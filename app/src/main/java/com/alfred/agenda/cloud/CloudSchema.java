@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -116,7 +117,7 @@ public final class CloudSchema {
 
     static String time(int minutes) {
         int m = Math.max(0, Math.min(24 * 60 - 1, minutes));
-        return String.format(java.util.Locale.ROOT, "%02d:%02d", m / 60, m % 60);
+        return String.format(Locale.ROOT, "%02d:%02d", m / 60, m % 60);
     }
 
     static int parseTime(@Nullable Object value, int fallback) {

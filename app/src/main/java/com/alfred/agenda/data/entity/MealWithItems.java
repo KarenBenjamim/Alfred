@@ -22,26 +22,4 @@ public class MealWithItems {
         list.sort(Comparator.comparingInt(i -> i.position));
         return list;
     }
-
-    /** Resumo em uma linha: "Pão integral (2 fatias), Ovo (2 un.)". */
-    public String summaryInline() {
-        StringBuilder sb = new StringBuilder();
-        for (MealItem item : sortedItems()) {
-            if (sb.length() > 0) sb.append(", ");
-            sb.append(item.description);
-            if (!item.quantity.isEmpty()) sb.append(" (").append(item.quantity).append(")");
-        }
-        return sb.toString();
-    }
-
-    /** Resumo em várias linhas, com marcadores. */
-    public String summaryLines() {
-        StringBuilder sb = new StringBuilder();
-        for (MealItem item : sortedItems()) {
-            if (sb.length() > 0) sb.append('\n');
-            sb.append("• ").append(item.description);
-            if (!item.quantity.isEmpty()) sb.append(" — ").append(item.quantity);
-        }
-        return sb.toString();
-    }
 }

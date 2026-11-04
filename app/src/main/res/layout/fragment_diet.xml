@@ -122,29 +122,6 @@
                     app:singleLine="true" />
             </HorizontalScrollView>
 
-            <TextView
-                android:id="@+id/groups_title"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:paddingHorizontal="@dimen/screen_padding"
-                android:paddingTop="8dp"
-                android:text="@string/diet_groups_title"
-                android:textAppearance="@style/TextAppearance.Alfred.Section" />
-
-            <!-- Atalhos para os 15 grupos da lista de substituição -->
-            <HorizontalScrollView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:scrollbars="none">
-
-                <com.google.android.material.chip.ChipGroup
-                    android:id="@+id/chips_groups"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingHorizontal="@dimen/screen_padding"
-                    app:singleLine="true" />
-            </HorizontalScrollView>
-
             <!-- ErrorState: o plano embutido não pôde ser lido -->
             <include
                 android:id="@+id/plan_error"

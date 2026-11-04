@@ -142,7 +142,6 @@
 
                         <!-- ProgressRing com a contagem no centro -->
                         <FrameLayout
-                            android:id="@+id/ring_frame"
                             android:layout_width="112dp"
                             android:layout_height="112dp">
 

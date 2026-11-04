@@ -2,7 +2,9 @@ package com.alfred.agenda.ui.tasks;
 
 import android.content.Context;
 import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.InsetDrawable;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.View;
@@ -228,8 +230,8 @@ public class RangeCalendarView extends LinearLayout {
     }
 
     /** A faixa ocupa só a altura do círculo do número, não a célula inteira. */
-    private android.graphics.drawable.Drawable insetVertical(GradientDrawable band) {
-        return new android.graphics.drawable.InsetDrawable(band, 0, dp(3), 0, dp(9));
+    private Drawable insetVertical(GradientDrawable band) {
+        return new InsetDrawable(band, 0, dp(3), 0, dp(9));
     }
 
     private static GradientDrawable circle(int fill, int strokeWidth, int strokeColor) {

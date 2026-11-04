@@ -10,12 +10,12 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 
 import com.alfred.agenda.R;
-import com.alfred.agenda.util.Honorific;
 import com.alfred.agenda.data.AlfredRepository;
 import com.alfred.agenda.data.entity.Tag;
 import com.alfred.agenda.data.entity.Task;
 import com.alfred.agenda.util.AlfredPhrases;
 import com.alfred.agenda.util.DateUtils;
+import com.alfred.agenda.util.Honorific;
 import com.alfred.agenda.util.TagColors;
 import com.alfred.agenda.util.UiUtils;
 import com.google.android.material.button.MaterialButton;
@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.BooleanSupplier;
 
 /**
  * Diálogo para criar/editar uma tarefa (de Trabalho ou Pessoal).
@@ -169,7 +170,7 @@ public final class TaskDialog {
         AlertDialog dialog = builder.show();
 
         // Copia o formulário para a tarefa; false = algo inválido (o erro já aparece na tela)
-        java.util.function.BooleanSupplier collect = () -> {
+        BooleanSupplier collect = () -> {
             String title = UiUtils.text(titleInput);
             if (title.isEmpty()) {
                 titleLayout.setError(Honorific.str(ctx, R.string.required_field));

@@ -10,9 +10,12 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.InputFilter;
+import android.text.InputType;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -42,6 +45,7 @@ import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.android.material.textfield.TextInputLayout;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -71,9 +75,7 @@ public class DietFragment extends Fragment {
     private TextView importText;
     private View importProgress;
     private View planError;
-    private View groupsTitle;
     private ChipGroup actions;
-    private ChipGroup groups;
     private View mealsEmpty;
     private View mealsTitle;
     private int mealCount;
@@ -119,16 +121,14 @@ public class DietFragment extends Fragment {
         importText = view.findViewById(R.id.import_text);
         importProgress = view.findViewById(R.id.import_progress);
         planError = view.findViewById(R.id.plan_error);
-        groupsTitle = view.findViewById(R.id.groups_title);
         actions = view.findViewById(R.id.chips_actions);
-        groups = view.findViewById(R.id.chips_groups);
         mealsEmpty = view.findViewById(R.id.meals_empty);
         mealsTitle = view.findViewById(R.id.meals_title);
         view.findViewById(R.id.import_button).setOnClickListener(v -> pickFile());
         view.findViewById(R.id.template_button).setOnClickListener(v -> downloadTemplate());
 
         RecyclerView list = view.findViewById(R.id.list);
-        MealAdapter adapter = new MealAdapter(new MealAdapter.Listener() {
+        adapter = new MealAdapter(new MealAdapter.Listener() {
             @Override
             public void onEdit(MealWithItems meal) {
                 MealDialog.show(DietFragment.this, meal, viewModel::save);
@@ -159,7 +159,7 @@ public class DietFragment extends Fragment {
                             })
                             .setNegativeButton(R.string.cancel, null)
                             .setOnDismissListener(d -> {
-                                if (!picked[0]) adapter().notifyDataSetChanged();
+                                if (!picked[0]) adapter.notifyDataSetChanged();
                             })
                             .show();
                 }
@@ -179,12 +179,12 @@ public class DietFragment extends Fragment {
             public void onEaten(MealGroups.Group group, MealWithItems meal, String current) {
                 // Texto livre, até 500 caracteres; salvar marca a refeição como feita hoje
                 View box = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_text_input, null);
-                com.google.android.material.textfield.TextInputLayout layout = box.findViewById(R.id.layout_text);
-                android.widget.EditText input = box.findViewById(R.id.input_text);
+                TextInputLayout layout = box.findViewById(R.id.layout_text);
+                EditText input = box.findViewById(R.id.input_text);
                 layout.setHint(R.string.meal_eaten_hint);
-                input.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
-                        | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
-                input.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(500)});
+                input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+                        | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+                input.setFilters(new InputFilter[]{new InputFilter.LengthFilter(500)});
                 input.setText(current);
                 new MaterialAlertDialogBuilder(requireContext())
                         .setTitle(getString(R.string.meal_eaten_title) + " · " + MealGroups.baseName(meal.meal.name))
@@ -198,7 +198,6 @@ public class DietFragment extends Fragment {
             }
         });
         list.setAdapter(adapter);
-        this.adapter = adapter;
 
         viewModel.meals.observe(getViewLifecycleOwner(), meals -> {
             mealCount = meals.size();
@@ -228,10 +227,6 @@ public class DietFragment extends Fragment {
         } else if (savedInstanceState == null && !plan.isImported()) {
             askImportOnce();
         }
-    }
-
-    private MealAdapter adapter() {
-        return adapter;
     }
 
     /**
@@ -309,9 +304,6 @@ public class DietFragment extends Fragment {
             actions.addView(chip(getString(R.string.diet_full_plan), R.drawable.ic_notes, v -> showFullPlan(plan)));
         }
         actions.setVisibility(imported ? View.VISIBLE : View.GONE);
-        groups.removeAllViews();
-        groupsTitle.setVisibility(View.GONE);
-        groups.setVisibility(View.GONE);
 
         mealsTitle.setVisibility(mealCount == 0 ? View.GONE : View.VISIBLE);
         if (mealCount == 0 && imported) {

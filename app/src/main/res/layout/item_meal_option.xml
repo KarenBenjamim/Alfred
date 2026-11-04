@@ -34,6 +34,7 @@
         <ImageButton
             android:id="@+id/option_edit"
             android:layout_width="40dp"
+            android:contentDescription="@string/meal_edit_plan"
             android:layout_height="@dimen/touch_target"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_edit"
@@ -42,6 +43,7 @@
         <ImageButton
             android:id="@+id/option_delete"
             android:layout_width="40dp"
+            android:contentDescription="@string/delete"
             android:layout_height="@dimen/touch_target"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_delete"

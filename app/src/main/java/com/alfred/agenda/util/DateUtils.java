@@ -23,7 +23,6 @@ public final class DateUtils {
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy", PT_BR);
     private static final DateTimeFormatter DATE_SHORT = DateTimeFormatter.ofPattern("dd/MM", PT_BR);
     private static final DateTimeFormatter LONG_DAY = DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM", PT_BR);
-    private static final DateTimeFormatter MONTH_SHORT = DateTimeFormatter.ofPattern("MMM", PT_BR);
 
     private DateUtils() {
     }
@@ -35,11 +34,6 @@ public final class DateUtils {
     /** Segunda-feira da semana atual, em epochDay. */
     public static long currentWeekStart() {
         return LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).toEpochDay();
-    }
-
-    /** 1 = segunda ... 7 = domingo. */
-    public static int todayDayOfWeek() {
-        return LocalDate.now().getDayOfWeek().getValue();
     }
 
     public static String formatTime(int minutes) {
@@ -70,13 +64,6 @@ public final class DateUtils {
         return capitalize(DayOfWeek.of(dayOfWeek).getDisplayName(TextStyle.FULL, PT_BR));
     }
 
-    /** Nomes de segunda (índice 0) a domingo (índice 6). */
-    public static String[] dayOfWeekNames() {
-        String[] names = new String[7];
-        for (int i = 0; i < 7; i++) names[i] = dayOfWeekName(i + 1);
-        return names;
-    }
-
     /** Cronômetro: 3725 s -> "01:02:05". */
     public static String formatClock(long seconds) {
         return String.format(Locale.US, "%02d:%02d:%02d", seconds / 3600, (seconds % 3600) / 60, seconds % 60);
@@ -88,11 +75,6 @@ public final class DateUtils {
         if (h > 0) return String.format(Locale.US, "%dh %02dmin", h, m);
         if (m > 0) return m + "min";
         return seconds > 0 ? "<1min" : "0min";
-    }
-
-    /** Meia-noite (início) do dia, em milissegundos no fuso local. */
-    public static long startOfDayMillis(long epochDay) {
-        return LocalDate.ofEpochDay(epochDay).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
     }
 
     /** Converte dia + horário local em milissegundos (para o AlarmManager). */

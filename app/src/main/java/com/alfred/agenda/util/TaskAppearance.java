@@ -13,6 +13,7 @@ import com.alfred.agenda.R;
 import com.alfred.agenda.data.entity.Tag;
 import com.google.android.material.card.MaterialCardView;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -50,7 +51,7 @@ public final class TaskAppearance {
         card.setStrokeWidth(border ? Math.round(ctx.getResources().getDisplayMetrics().density) : 0);
         int base = ContextCompat.getColor(ctx, R.color.graphite_light);
         // Uma cor por tag (Pessoal: paleta; Trabalho: grupo e tom), na ordem de TagPalette, sem repetir
-        List<Integer> distinct = new java.util.ArrayList<>();
+        List<Integer> distinct = new ArrayList<>();
         for (Tag t : TagPalette.ordered(tags)) {
             int c = TagColors.color(ctx, t);
             if (!distinct.contains(c)) distinct.add(c);

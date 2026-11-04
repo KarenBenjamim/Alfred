@@ -5,6 +5,7 @@ import android.graphics.drawable.GradientDrawable;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -42,7 +43,7 @@ public final class StudyHistorySheet {
     public static void show(Fragment host, StudySubject subject) {
         Context ctx = host.requireContext();
         BottomSheetDialog sheet = new BottomSheetDialog(ctx);
-        View view = LayoutInflater.from(ctx).inflate(R.layout.sheet_study_history, null);
+        View view = LayoutInflater.from(ctx).inflate(R.layout.sheet_study_history, new FrameLayout(ctx), false);
         TextView title = view.findViewById(R.id.title);
         TextView total = view.findViewById(R.id.total);
         LinearLayout chart = view.findViewById(R.id.chart);

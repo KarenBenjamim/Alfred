@@ -435,7 +435,6 @@
 
     <!-- Plano alimentar e substituições -->
     <string name="diet_source">Planilha: %1$s · importada em %2$s</string>
-    <string name="diet_groups_title">Grupos de substituição</string>
     <string name="diet_water">Água</string>
     <string name="diet_notes">Orientações</string>
     <!-- Ex.: "Grupo 4 · 2,5 porções" -->

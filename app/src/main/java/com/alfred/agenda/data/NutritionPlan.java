@@ -12,6 +12,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -22,6 +23,7 @@ import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Plano alimentar importado da planilha Excel da nutricionista (ver PlanImport).
@@ -170,11 +172,6 @@ public final class NutritionPlan {
         return null;
     }
 
-    /** Mesmo plano, com outra origem/data (usado ao confirmar a importação). */
-    NutritionPlan withSource(String newSource, long newImportedAt) {
-        return new NutritionPlan(newSource, newImportedAt, meals, groups, waterMlPerKg, waterTips, notes);
-    }
-
     // ---------------- Acesso por usuário ----------------
 
     /** Plano do usuário logado, carregado uma vez e guardado em memória. */
@@ -203,14 +200,6 @@ public final class NutritionPlan {
     /** Plano de outra conta deste aparelho (migração para a nuvem), sem mexer no que está em memória. */
     static NutritionPlan forAccount(Context context, int user) {
         return load(file(context, user));
-    }
-
-    /** Descarta o que está em memória e lê o arquivo de novo ("Tentar novamente"). */
-    public static NutritionPlan reload(Context context) {
-        synchronized (NutritionPlan.class) {
-            instance = null;
-        }
-        return get(context);
     }
 
     /** Esquece o plano em memória (ao sair da conta). */
@@ -276,7 +265,7 @@ public final class NutritionPlan {
                 items.put(o);
             }
             jm.put(new JSONObject()
-                    .put("time", String.format(java.util.Locale.ROOT, "%02d:%02d", m.timeMinutes / 60, m.timeMinutes % 60))
+                    .put("time", String.format(Locale.ROOT, "%02d:%02d", m.timeMinutes / 60, m.timeMinutes % 60))
                     .put("name", m.name)
                     .put("notes", m.notes)
                     .put("items", items));
@@ -373,7 +362,7 @@ public final class NutritionPlan {
     }
 
     private static byte[] readAll(InputStream in) throws IOException {
-        java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
         byte[] buf = new byte[8192];
         int n;
         while ((n = in.read(buf)) > 0) out.write(buf, 0, n);

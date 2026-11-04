@@ -2,6 +2,8 @@ package com.alfred.agenda.ui.profile;
 
 import android.content.Context;
 import android.content.res.ColorStateList;
+import android.view.Gravity;
+import android.view.View;
 import android.widget.GridLayout;
 import android.widget.ImageView;
 
@@ -12,6 +14,7 @@ import com.alfred.agenda.util.Avatars;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.imageview.ShapeableImageView;
+import com.google.android.material.shape.RelativeCornerSize;
 import com.google.android.material.shape.ShapeAppearanceModel;
 
 import java.util.function.IntConsumer;
@@ -41,7 +44,7 @@ public final class ProfileWidgets {
             v.setImageResource(Avatars.DRAWABLES[i]);
             v.setScaleType(ImageView.ScaleType.CENTER_CROP);
             v.setShapeAppearanceModel(ShapeAppearanceModel.builder().setAllCornerSizes(
-                    new com.google.android.material.shape.RelativeCornerSize(0.5f)).build());
+                    new RelativeCornerSize(0.5f)).build());
             int pad = dp(ctx, 4);
             v.setPadding(pad, pad, pad, pad);
             v.setContentDescription(names[Math.min(i, names.length - 1)]);
@@ -52,7 +55,7 @@ public final class ProfileWidgets {
                     GridLayout.spec(GridLayout.UNDEFINED), GridLayout.spec(GridLayout.UNDEFINED, 1f));
             lp.width = size;
             lp.height = size;
-            lp.setGravity(android.view.Gravity.CENTER);
+            lp.setGravity(Gravity.CENTER);
             lp.setMargins(0, dp(ctx, 6), 0, dp(ctx, 6));
             grid.addView(v, lp);
             views[i] = v;
@@ -89,7 +92,7 @@ public final class ProfileWidgets {
 
         for (int i = 0; i < options.length; i++) {
             Chip chip = new Chip(ctx);
-            chip.setId(android.view.View.generateViewId());
+            chip.setId(View.generateViewId());
             chip.setText(options[i]);
             chip.setCheckable(true);
             chip.setCheckedIconVisible(true);

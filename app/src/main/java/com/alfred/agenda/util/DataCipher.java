@@ -3,13 +3,13 @@ package com.alfred.agenda.util;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Base64;
-
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -118,7 +118,7 @@ public final class DataCipher {
                     .setKeySize(256)
                     .build());
             return gen.generateKey();
-        } catch (java.io.IOException e) {
+        } catch (IOException e) {
             throw new GeneralSecurityException("Keystore indisponível", e);
         }
     }

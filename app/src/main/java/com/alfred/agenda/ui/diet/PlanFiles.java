@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Collections;
+import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -50,7 +51,7 @@ public final class PlanFiles {
     /** Lê e valida a planilha. Chame fora da thread principal. Nunca lança exceção. */
     public static PlanImport.Result readPlan(Context ctx, Uri uri) {
         String name = displayName(ctx, uri);
-        if (name != null && name.toLowerCase(java.util.Locale.ROOT).endsWith(".xls")) {
+        if (name != null && name.toLowerCase(Locale.ROOT).endsWith(".xls")) {
             return PlanImport.failure("O arquivo \"" + name + "\" está no formato antigo do Excel (.xls). "
                     + "Abra no Excel ou no Google Planilhas e salve como .xlsx.");
         }

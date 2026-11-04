@@ -23,7 +23,6 @@ import com.alfred.agenda.util.Honorific;
 import com.alfred.agenda.util.UiUtils;
 import com.alfred.agenda.util.WaterGoal;
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.google.android.material.textfield.TextInputLayout;
 

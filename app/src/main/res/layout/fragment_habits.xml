@@ -20,7 +20,6 @@
             <!-- Água de hoje: meta pelo peso do perfil (35 ml/kg), registro rápido e ajuste.
                  Zera sozinha a cada novo dia (cada dia é um registro). -->
             <com.google.android.material.card.MaterialCardView
-                android:id="@+id/water_card"
                 style="?attr/materialCardViewFilledStyle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

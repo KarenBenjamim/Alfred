@@ -13,7 +13,6 @@
     android:visibility="gone">
 
     <FrameLayout
-        android:id="@+id/empty_icon_frame"
         android:layout_width="64dp"
         android:layout_height="64dp"
         android:background="@drawable/bg_icon_circle">

@@ -8,6 +8,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -59,7 +60,7 @@ public final class PlanSheets {
         }
 
         BottomSheetDialog sheet = new BottomSheetDialog(ctx);
-        View view = LayoutInflater.from(ctx).inflate(R.layout.sheet_group, null);
+        View view = LayoutInflater.from(ctx).inflate(R.layout.sheet_group, new FrameLayout(ctx), false);
         TextView title = view.findViewById(R.id.title);
         TextView subtitle = view.findViewById(R.id.subtitle);
         EditText search = view.findViewById(R.id.search);
@@ -161,7 +162,7 @@ public final class PlanSheets {
 
     public static void showNotes(Context ctx) {
         BottomSheetDialog sheet = new BottomSheetDialog(ctx);
-        View view = LayoutInflater.from(ctx).inflate(R.layout.sheet_notes, null);
+        View view = LayoutInflater.from(ctx).inflate(R.layout.sheet_notes, new FrameLayout(ctx), false);
         LinearLayout container = view.findViewById(R.id.container);
         float density = ctx.getResources().getDisplayMetrics().density;
 

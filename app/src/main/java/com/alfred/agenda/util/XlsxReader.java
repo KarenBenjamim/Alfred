@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -21,7 +22,6 @@ import java.util.TreeMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipInputStream;
-
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
 
@@ -284,7 +284,7 @@ public final class XlsxReader {
         try {
             double d = Double.parseDouble(raw);
             if (d == Math.rint(d) && Math.abs(d) < 1e15) return Long.toString((long) d);
-            return new BigDecimal(raw).round(new java.math.MathContext(12)).stripTrailingZeros().toPlainString();
+            return new BigDecimal(raw).round(new MathContext(12)).stripTrailingZeros().toPlainString();
         } catch (NumberFormatException e) {
             return raw;
         }

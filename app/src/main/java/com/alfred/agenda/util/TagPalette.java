@@ -37,12 +37,4 @@ public final class TagPalette {
                 .thenComparingLong(t -> t.id));
         return list;
     }
-
-    /** Índices de cor (já validados) de todas as tags, na ordem determinística. */
-    public static int[] colorIndices(List<Tag> tags) {
-        List<Tag> list = ordered(tags);
-        int[] out = new int[list.size()];
-        for (int i = 0; i < list.size(); i++) out[i] = safeIndex(list.get(i).colorIndex);
-        return out;
-    }
 }

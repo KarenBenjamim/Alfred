@@ -2,7 +2,9 @@ package com.alfred.agenda.ui.common;
 
 import android.content.Context;
 import android.content.res.ColorStateList;
+import android.text.TextUtils;
 import android.util.AttributeSet;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -86,7 +88,7 @@ public class AlfredBottomNav extends LinearLayout {
         label.setText(labelRes);
         label.setTextSize(11);
         label.setMaxLines(1);
-        label.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        label.setEllipsize(TextUtils.TruncateAt.END);
         label.setGravity(Gravity.CENTER);
         LayoutParams labelLp = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
         labelLp.topMargin = dp(3);
@@ -132,7 +134,7 @@ public class AlfredBottomNav extends LinearLayout {
     }
 
     private int resolveRipple() {
-        android.util.TypedValue tv = new android.util.TypedValue();
+        TypedValue tv = new TypedValue();
         getContext().getTheme().resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, tv, true);
         return tv.resourceId;
     }

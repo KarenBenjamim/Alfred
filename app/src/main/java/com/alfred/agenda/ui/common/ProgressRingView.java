@@ -40,11 +40,6 @@ public class ProgressRingView extends View {
         arc.setColor(ContextCompat.getColor(context, R.color.highlight));
     }
 
-    public void setRingColor(int color) {
-        arc.setColor(color);
-        invalidate();
-    }
-
     public void setProgress(float value) {
         float target = Math.max(0f, Math.min(1f, value));
         if (animator != null) animator.cancel();

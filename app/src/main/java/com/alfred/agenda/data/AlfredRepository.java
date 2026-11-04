@@ -13,24 +13,24 @@ import com.alfred.agenda.account.AccountStore;
 import com.alfred.agenda.account.UserProfile;
 import com.alfred.agenda.cloud.CloudConfig;
 import com.alfred.agenda.cloud.CloudSchema;
-import com.alfred.agenda.data.dao.MealDao;
-import com.alfred.agenda.data.dao.TaskDao;
 import com.alfred.agenda.data.dao.HabitDao;
+import com.alfred.agenda.data.dao.MealDao;
 import com.alfred.agenda.data.dao.StudyDao;
 import com.alfred.agenda.data.dao.TagDao;
+import com.alfred.agenda.data.dao.TaskDao;
 import com.alfred.agenda.data.dao.WaterDao;
+import com.alfred.agenda.data.entity.Habit;
+import com.alfred.agenda.data.entity.HabitLog;
 import com.alfred.agenda.data.entity.Meal;
 import com.alfred.agenda.data.entity.MealItem;
 import com.alfred.agenda.data.entity.MealLog;
 import com.alfred.agenda.data.entity.MealWithItems;
-import com.alfred.agenda.data.entity.Task;
-import com.alfred.agenda.data.entity.Habit;
-import com.alfred.agenda.data.entity.HabitLog;
 import com.alfred.agenda.data.entity.StudyLog;
 import com.alfred.agenda.data.entity.StudyModule;
 import com.alfred.agenda.data.entity.StudySubject;
 import com.alfred.agenda.data.entity.StudyTopic;
 import com.alfred.agenda.data.entity.Tag;
+import com.alfred.agenda.data.entity.Task;
 import com.alfred.agenda.data.entity.TaskTag;
 import com.alfred.agenda.data.entity.WaterLog;
 import com.alfred.agenda.notifications.AlarmScheduler;
@@ -45,20 +45,22 @@ import com.alfred.agenda.util.WaterGoal;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
@@ -804,7 +806,7 @@ public class AlfredRepository {
                 } else {
                     result = LegacyMigration.run(app, legacyId, uid, existingInCloud(), appVersion);
                 }
-            } catch (java.util.concurrent.TimeoutException e) {
+            } catch (TimeoutException e) {
                 error = R.string.migration_error_timeout;
             } catch (Exception e) {
                 AppLog.e("Falha na migração", e);
@@ -849,7 +851,7 @@ public class AlfredRepository {
             } catch (LegacyMigration.InvalidBackup | JSONException | IOException e) {
                 AppLog.e("Backup inválido", e);
                 error = R.string.backup_import_invalid;
-            } catch (java.util.concurrent.TimeoutException e) {
+            } catch (TimeoutException e) {
                 error = R.string.migration_error_timeout;
             } catch (Exception e) {
                 AppLog.e("Falha ao importar o backup", e);
@@ -863,9 +865,9 @@ public class AlfredRepository {
 
     /** Lê o arquivo escolhido como texto UTF-8, com limite de tamanho. */
     private String readText(Uri source) throws IOException {
-        try (java.io.InputStream in = app.getContentResolver().openInputStream(source)) {
+        try (InputStream in = app.getContentResolver().openInputStream(source)) {
             if (in == null) throw new IOException("Arquivo indisponível");
-            java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
             byte[] buf = new byte[8192];
             long total = 0;
             int n;

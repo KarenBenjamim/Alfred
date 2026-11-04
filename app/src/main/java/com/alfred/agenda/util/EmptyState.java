@@ -1,5 +1,6 @@
 package com.alfred.agenda.util;
 
+import android.content.res.ColorStateList;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -43,7 +44,7 @@ public final class EmptyState {
     public static void showError(View root, int title, int message, int buttonText, Runnable retry) {
         show(root, R.drawable.ic_warning, title, message, buttonText, retry);
         ImageView icon = root.findViewById(R.id.empty_icon);
-        icon.setImageTintList(android.content.res.ColorStateList.valueOf(
+        icon.setImageTintList(ColorStateList.valueOf(
                 ContextCompat.getColor(root.getContext(), R.color.error)));
     }
 
