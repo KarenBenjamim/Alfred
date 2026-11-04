@@ -158,7 +158,13 @@ textarea { min-height: 70px; resize: vertical; }
 .timer { font-variant-numeric: tabular-nums; font-size: 1.2rem; font-weight: 600; }
 .play { width: 44px; height: 44px; border-radius: 50%; background: var(--gold); color: var(--on-gold); font-size: 1rem; flex: 0 0 auto; }
 
-/* Dieta */
+/* Dieta: refeição que abre e fecha */
+.meal > summary { list-style: none; cursor: pointer; color: inherit; }
+.meal > summary::-webkit-details-marker { display: none; }
+.meal > summary::after { content: '›'; color: var(--text-2); font-size: 1.4rem; transition: transform .15s; }
+.meal[open] > summary::after { transform: rotate(90deg); }
+.meal[open] > summary { margin-bottom: 8px; }
+@media (prefers-reduced-motion: reduce) { .meal > summary::after { transition: none; } }
 details { margin-top: 6px; }
 summary { cursor: pointer; color: var(--gold); font-size: .9rem; }
 .food { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0; }

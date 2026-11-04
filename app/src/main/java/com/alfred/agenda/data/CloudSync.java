@@ -253,10 +253,16 @@ public final class CloudSync {
             if (meal == null || !ids.add(meal.id)) continue;
             meals.add(meal);
             items.addAll(CloudSchema.mealItems(meal.id, m));
-            for (long day : CloudSchema.days(m.get(CloudSchema.MEAL_DONE))) {
+            // Dia feito, com o que foi comido (um dia com "comido" também conta como feito)
+            Map<Long, String> eaten = CloudSchema.mealEaten(m);
+            Set<Long> days = new HashSet<>(CloudSchema.days(m.get(CloudSchema.MEAL_DONE)));
+            days.addAll(eaten.keySet());
+            for (long day : days) {
                 MealLog log = new MealLog();
                 log.mealId = meal.id;
                 log.epochDay = day;
+                String text = eaten.get(day);
+                log.eaten = text == null ? "" : text;
                 logs.add(log);
             }
         }
@@ -437,8 +443,20 @@ public final class CloudSync {
 
     void setMealDone(long mealId, long epochDay, boolean done) {
         String day = CloudSchema.day(epochDay);
-        doc(CloudSchema.MEALS, mealId).set(Collections.singletonMap(CloudSchema.MEAL_DONE,
-                done ? FieldValue.arrayUnion(day) : FieldValue.arrayRemove(day)), SetOptions.merge());
+        Map<String, Object> m = new HashMap<>();
+        m.put(CloudSchema.MEAL_DONE, done ? FieldValue.arrayUnion(day) : FieldValue.arrayRemove(day));
+        // Desmarcar apaga também o "o que comi" do dia
+        if (!done) m.put(CloudSchema.MEAL_EATEN, Collections.singletonMap(day, FieldValue.delete()));
+        doc(CloudSchema.MEALS, mealId).set(m, SetOptions.merge());
+    }
+
+    /** "O que comi de verdade": marca o dia como feito e guarda o texto (vazio = apaga o texto). */
+    void setMealEaten(long mealId, long epochDay, String eaten) {
+        String day = CloudSchema.day(epochDay);
+        Map<String, Object> m = new HashMap<>();
+        m.put(CloudSchema.MEAL_DONE, FieldValue.arrayUnion(day));
+        m.put(CloudSchema.MEAL_EATEN, Collections.singletonMap(day, eaten.isEmpty() ? FieldValue.delete() : eaten));
+        doc(CloudSchema.MEALS, mealId).set(m, SetOptions.merge());
     }
 
     void pushHabit(Habit h) {
@@ -533,8 +551,12 @@ public final class CloudSync {
                     FieldValue.arrayRemove(isoDays(e.getValue()).toArray())), SetOptions.merge());
         }
         for (Map.Entry<Long, List<Long>> e : oldMealDays.entrySet()) {
-            doc(CloudSchema.MEALS, e.getKey()).set(Collections.singletonMap(CloudSchema.MEAL_DONE,
-                    FieldValue.arrayRemove(isoDays(e.getValue()).toArray())), SetOptions.merge());
+            Map<String, Object> m = new HashMap<>();
+            m.put(CloudSchema.MEAL_DONE, FieldValue.arrayRemove(isoDays(e.getValue()).toArray()));
+            Map<String, Object> eaten = new HashMap<>();
+            for (long day : e.getValue()) eaten.put(CloudSchema.day(day), FieldValue.delete());
+            m.put(CloudSchema.MEAL_EATEN, eaten);
+            doc(CloudSchema.MEALS, e.getKey()).set(m, SetOptions.merge());
         }
         for (Map.Entry<Long, List<Long>> e : oldStudyDays.entrySet()) {
             Map<String, Object> time = new HashMap<>();

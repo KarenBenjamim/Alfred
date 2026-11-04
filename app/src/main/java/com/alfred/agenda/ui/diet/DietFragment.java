@@ -32,7 +32,6 @@ import com.alfred.agenda.account.AccountStore;
 import com.alfred.agenda.data.NutritionPlan;
 import com.alfred.agenda.data.PlanImport;
 import com.alfred.agenda.data.entity.MealItem;
-import com.alfred.agenda.data.entity.MealLog;
 import com.alfred.agenda.data.entity.MealWithItems;
 import com.alfred.agenda.util.DateUtils;
 import com.alfred.agenda.util.EmptyState;
@@ -44,9 +43,8 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.io.IOException;
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -54,7 +52,9 @@ import java.util.concurrent.Executors;
  * Aba "Dieta": plano alimentar da nutricionista, importado de uma planilha Excel.
  *  - No primeiro acesso, pede a planilha (formato do template) e oferece baixar o template.
  *  - Antes de salvar, mostra uma prévia e pede confirmação (avisa se sobraram linhas de exemplo).
- *  - Atalhos: Água, Orientações, Importar nova planilha, Baixar template e os grupos de substituição.
+ *  - A tela mostra só as refeições; cada uma abre para ver as opções (substituições) e para
+ *    registrar o que foi comido de verdade.
+ *  - "Plano completo" reúne os grupos de substituição, Água, Orientações, Importar e o template.
  *  - Em cada alimento, um chip "Grupo X" abre direto a lista de substituição daquele grupo.
  */
 public class DietFragment extends Fragment {
@@ -148,6 +148,28 @@ public class DietFragment extends Fragment {
             public void onGroupClick(MealItem item) {
                 PlanSheets.showGroup(requireContext(), item.groupNumber, item.groupPortions, item.description);
             }
+
+            @Override
+            public void onEaten(MealWithItems meal, String current) {
+                // Texto livre, até 500 caracteres; salvar marca a refeição como feita hoje
+                View box = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_text_input, null);
+                com.google.android.material.textfield.TextInputLayout layout = box.findViewById(R.id.layout_text);
+                android.widget.EditText input = box.findViewById(R.id.input_text);
+                layout.setHint(R.string.meal_eaten_hint);
+                input.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+                        | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+                input.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(500)});
+                input.setText(current);
+                new MaterialAlertDialogBuilder(requireContext())
+                        .setTitle(getString(R.string.meal_eaten_title) + " · " + meal.meal.name)
+                        .setView(box)
+                        .setNegativeButton(R.string.cancel, null)
+                        .setPositiveButton(R.string.save, (d, w) -> viewModel.setEaten(meal.meal.id, UiUtils.text(input), () -> {
+                            if (isAdded()) ((MainActivity) requireActivity())
+                                    .showMessage(Honorific.str(requireContext(), R.string.meal_eaten_saved));
+                        }))
+                        .show();
+            }
         });
         list.setAdapter(adapter);
 
@@ -157,9 +179,7 @@ public class DietFragment extends Fragment {
             renderPlan(NutritionPlan.get(requireContext()));
         });
         viewModel.logsToday.observe(getViewLifecycleOwner(), logs -> {
-            Set<Long> ids = new HashSet<>();
-            for (MealLog l : logs) ids.add(l.mealId);
-            adapter.setDoneIds(ids);
+            adapter.setLogs(logs);
         });
         viewModel.importing().observe(getViewLifecycleOwner(), busy ->
                 importProgress.setVisibility(Boolean.TRUE.equals(busy) ? View.VISIBLE : View.GONE));
@@ -191,6 +211,31 @@ public class DietFragment extends Fragment {
 
     // ---------------- Estado do plano ----------------
 
+    /** Grupos de substituição, Água, Orientações, Importar nova planilha e o template. */
+    private void showFullPlan(NutritionPlan plan) {
+        List<CharSequence> labels = new ArrayList<>();
+        List<Runnable> actionsList = new ArrayList<>();
+        for (NutritionPlan.Group g : plan.groups) {
+            labels.add(getString(R.string.group_chip_short, g.number, g.name));
+            actionsList.add(() -> PlanSheets.showGroup(requireContext(), g.number, "", null));
+        }
+        labels.add(getString(R.string.diet_water));
+        actionsList.add(() -> PlanSheets.showWater(requireContext()));
+        if (!plan.notes.isEmpty()) {
+            labels.add(getString(R.string.diet_notes));
+            actionsList.add(() -> PlanSheets.showNotes(requireContext()));
+        }
+        labels.add(getString(R.string.diet_import_again));
+        actionsList.add(this::pickFile);
+        labels.add(getString(R.string.diet_template_chip));
+        actionsList.add(this::downloadTemplate);
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.diet_full_plan)
+                .setItems(labels.toArray(new CharSequence[0]), (d, which) -> actionsList.get(which).run())
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
     /** Mostra o card de importação, o erro ou os atalhos, conforme o plano do usuário. */
     private void renderPlan(NutritionPlan plan) {
         boolean imported = plan.isImported();
@@ -211,24 +256,15 @@ public class DietFragment extends Fragment {
             EmptyState.hide(planError);
         }
 
+        // A tela mostra só as refeições: o resto do plano fica em "Plano completo"
         actions.removeAllViews();
-        actions.addView(chip(getString(R.string.diet_water), R.drawable.ic_water,
-                v -> PlanSheets.showWater(requireContext())));
-        if (imported && !plan.notes.isEmpty()) {
-            actions.addView(chip(getString(R.string.diet_notes), R.drawable.ic_notes,
-                    v -> PlanSheets.showNotes(requireContext())));
-        }
         if (imported) {
-            actions.addView(chip(getString(R.string.diet_import_again), R.drawable.ic_upload, v -> pickFile()));
+            actions.addView(chip(getString(R.string.diet_full_plan), R.drawable.ic_notes, v -> showFullPlan(plan)));
         }
-        actions.addView(chip(getString(R.string.diet_template_chip), R.drawable.ic_download, v -> downloadTemplate()));
-
+        actions.setVisibility(imported ? View.VISIBLE : View.GONE);
         groups.removeAllViews();
-        for (NutritionPlan.Group g : plan.groups) {
-            groups.addView(chip(getString(R.string.group_chip_short, g.number, g.name), 0,
-                    v -> PlanSheets.showGroup(requireContext(), g.number, "", null)));
-        }
-        groupsTitle.setVisibility(plan.groups.isEmpty() ? View.GONE : View.VISIBLE);
+        groupsTitle.setVisibility(View.GONE);
+        groups.setVisibility(View.GONE);
 
         mealsTitle.setVisibility(mealCount == 0 ? View.GONE : View.VISIBLE);
         if (mealCount == 0 && imported) {

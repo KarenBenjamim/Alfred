@@ -120,6 +120,20 @@ public class CloudSchemaTest {
     }
 
     @Test
+    public void eatenTextByDayIgnoresGarbage() {
+        Map<String, Object> eaten = new HashMap<>();
+        eaten.put("2026-11-03", "Troquei o arroz por batata-doce");
+        eaten.put("2026-11-02", "   ");
+        eaten.put("lixo", "x");
+        eaten.put("2026-11-01", 5L);
+        Map<String, Object> doc = new HashMap<>();
+        doc.put(CloudSchema.MEAL_EATEN, eaten);
+        Map<Long, String> byDay = CloudSchema.mealEaten(doc);
+        assertEquals(1, byDay.size());
+        assertEquals("Troquei o arroz por batata-doce", byDay.get(DAY));
+    }
+
+    @Test
     public void invalidTimeFallsBack() {
         assertEquals(8 * 60, CloudSchema.parseTime("25:00", 8 * 60));
         assertEquals(8 * 60, CloudSchema.parseTime("abc", 8 * 60));

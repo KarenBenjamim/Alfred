@@ -70,8 +70,12 @@ public interface MealDao {
     @Query("SELECT COUNT(*) > 0 FROM meal_logs WHERE mealId = :mealId AND epochDay = :epochDay")
     boolean isDone(long mealId, long epochDay);
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    /** IGNORE (e não REPLACE): marcar de novo não apaga o "o que comi" já registrado. */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     void insertLog(MealLog log);
+
+    @Query("UPDATE meal_logs SET eaten = :eaten WHERE mealId = :mealId AND epochDay = :epochDay")
+    void setEaten(long mealId, long epochDay, String eaten);
 
     @Query("DELETE FROM meal_logs WHERE mealId = :mealId AND epochDay = :epochDay")
     void deleteLog(long mealId, long epochDay);

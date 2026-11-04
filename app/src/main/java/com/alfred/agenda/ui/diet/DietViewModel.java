@@ -81,6 +81,11 @@ public class DietViewModel extends AndroidViewModel {
     }
 
     /** @param onSuccess chamado só se a gravação deu certo (pode ser null) */
+    /** O que foi comido de verdade hoje (marca a refeição como feita). */
+    public void setEaten(long mealId, String eaten, @Nullable Runnable onSuccess) {
+        repo.setMealEaten(mealId, today, eaten, onSuccess);
+    }
+
     public void setDone(long mealId, boolean done, @Nullable Runnable onSuccess) {
         repo.setMealDone(mealId, today, done, onSuccess);
     }

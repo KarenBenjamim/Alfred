@@ -6,7 +6,7 @@ import {
   sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup, signOut,
 } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js';
 import {
-  doc, collection, onSnapshot, setDoc, deleteDoc, writeBatch, arrayUnion, arrayRemove, increment,
+  doc, collection, onSnapshot, setDoc, deleteDoc, deleteField, writeBatch, arrayUnion, arrayRemove, increment,
 } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js';
 import * as S from './schema.js';
 
@@ -840,6 +840,9 @@ function editSubject(s, m) {
 
 // ===================== Dieta =====================
 
+/** Refeições abertas na tela (sobrevivem ao redesenho quando chega dado novo). */
+const openMeals = new Set();
+
 function renderDiet() {
   const t = today();
   const meals = [...state.meals.values()].sort((a, b) => a.minutos - b.minutos);
@@ -849,26 +852,54 @@ function renderDiet() {
     meals.length === 0 ? h('div', { class: 'card' }, h('p', {}, 'Nenhuma refeição ainda.'),
       h('p', { class: 'caption' }, 'A planilha da nutricionista é importada pelo app Android (Configurações > Importar planilha da dieta).')) : null,
     meals.length ? h('h2', {}, `Refeições de hoje · ${meals.filter((m) => m.feitas.includes(t)).length}/${meals.length}`) : null,
-    meals.map((m) => {
-      const done = m.feitas.includes(t);
-      return h('div', { class: `card${done ? ' done' : ''}` },
-        h('div', { class: 'card-head' },
-          h('input', { type: 'checkbox', checked: done, style: { width: '20px', margin: 0 }, 'aria-label': `${m.nome} feita hoje`,
-            onchange: (e) => write(setDoc(ref(S.COL.MEALS, m.id), { feitas: e.target.checked ? arrayUnion(t) : arrayRemove(t) }, { merge: true })) }),
-          h('h3', {}, `${S.time(m.minutos)} · ${m.nome}`),
-          h('button', { class: 'icon', 'aria-label': `Editar ${m.nome}`, onclick: () => editMeal(m) }, '⋮')),
-        m.observacoes ? h('p', { class: 'caption' }, m.observacoes) : null,
-        m.itens.map((it) => h('div', {},
-          h('div', { class: 'food' }, h('span', {}, it.alimento), h('span', { class: 'muted' }, it.quantidade)),
-          it.substituicoes ? h('details', {}, h('summary', {}, 'Substituições'),
-            h('p', { class: 'caption', style: { whiteSpace: 'pre-line' } }, it.substituicoes)) : null)));
-    }),
-    plan?.groups?.length ? [h('h2', {}, 'Grupos de substituição'), plan.groups.map((g) => h('details', { class: 'card' },
+    meals.map((m) => mealCard(m, t)),
+    plan ? fullPlan(plan) : null);
+}
+
+/** Fechado: horário, nome e "feita hoje". Aberto: alimentos e opções, orientação e "O que comi". */
+function mealCard(m, t) {
+  const done = m.feitas.includes(t);
+  const eaten = m.comido[t] || '';
+  const card = h('details', { class: `card meal${done ? ' done' : ''}`, open: openMeals.has(m.id) },
+    h('summary', { class: 'card-head' },
+      h('input', { type: 'checkbox', checked: done, style: { width: '20px', margin: 0 }, 'aria-label': `${m.nome} feita hoje`,
+        onclick: (e) => e.stopPropagation(), // marcar não abre/fecha o cartão
+        onchange: (e) => write(setDoc(ref(S.COL.MEALS, m.id), e.target.checked ? { feitas: arrayUnion(t) }
+          : { feitas: arrayRemove(t), comido: { [t]: deleteField() } }, { merge: true })) }),
+      h('div', { class: 'main' }, h('h3', {}, `${S.time(m.minutos)} · ${m.nome}`),
+        eaten ? h('p', { class: 'caption' }, `Comi: ${eaten}`) : null)),
+    m.itens.map((it) => h('div', {},
+      h('div', { class: 'food' }, h('span', {}, it.alimento), h('span', { class: 'muted' }, it.quantidade)),
+      it.substituicoes ? h('details', {}, h('summary', {}, 'Opções de substituição'),
+        h('p', { class: 'caption', style: { whiteSpace: 'pre-line' } }, it.substituicoes)) : null)),
+    m.observacoes ? h('p', { class: 'caption gold' }, m.observacoes) : null,
+    eatenForm(m, t, eaten),
+    h('div', { class: 'actions' }, h('button', { class: 'text', onclick: () => editMeal(m) }, 'Editar refeição do plano')));
+  card.addEventListener('toggle', () => { if (card.open) openMeals.add(m.id); else openMeals.delete(m.id); });
+  return card;
+}
+
+/** "O que comi de verdade": salvar marca a refeição como feita hoje; vazio apaga o texto. */
+function eatenForm(m, t, eaten) {
+  const box = h('textarea', { maxlength: '500', placeholder: 'Ex.: troquei o arroz por batata-doce', 'aria-label': `O que comi em ${m.nome}` }, eaten);
+  return h('div', {},
+    h('label', {}, 'O que comi de verdade'), box,
+    h('div', { class: 'actions' }, h('button', { class: 'secondary', onclick: () => {
+      const text = box.value.trim();
+      write(setDoc(ref(S.COL.MEALS, m.id), { feitas: arrayUnion(t), comido: { [t]: text || deleteField() } }, { merge: true }));
+      toast(voc('Anotado, {voc}.'));
+    } }, 'Salvar o que comi')));
+}
+
+/** Grupos de substituição, orientações e água: recolhidos, fora da lista de refeições. */
+function fullPlan(plan) {
+  return h('details', { class: 'card' }, h('summary', {}, 'Plano completo'),
+    plan.groups?.length ? [h('h3', {}, 'Grupos de substituição'), plan.groups.map((g) => h('details', {},
       h('summary', {}, `Grupo ${g.number} · ${g.name}`),
       (g.items || []).map((f) => h('div', { class: 'food' }, h('span', {}, f.food), h('span', { class: 'muted' }, [f.qty, f.measure].filter(Boolean).join(' '))))))] : null,
-    plan?.notes?.length ? [h('h2', {}, 'Orientações'), h('div', { class: 'card' }, plan.notes.map((n) =>
-      h('div', { class: 'item' }, h('div', { class: 'main' }, h('div', { class: 'gold' }, n.topic), h('div', { class: 'caption', style: { whiteSpace: 'pre-line' } }, n.text)))))] : null,
-    plan?.water?.tips ? h('div', { class: 'card' }, h('h3', {}, 'Água'), h('p', { class: 'caption', style: { whiteSpace: 'pre-line' } }, plan.water.tips)) : null);
+    plan.notes?.length ? [h('h3', {}, 'Orientações'), plan.notes.map((n) =>
+      h('div', { class: 'item' }, h('div', { class: 'main' }, h('div', { class: 'gold' }, n.topic), h('div', { class: 'caption', style: { whiteSpace: 'pre-line' } }, n.text))))] : null,
+    plan.water?.tips ? [h('h3', {}, 'Água'), h('p', { class: 'caption', style: { whiteSpace: 'pre-line' } }, plan.water.tips)] : null);
 }
 
 function editMeal(m) {

@@ -47,7 +47,7 @@ import com.alfred.agenda.account.AccountStore;
                 Task.class, Tag.class, TaskTag.class,
                 StudyTopic.class, StudyModule.class, StudySubject.class, StudyLog.class,
                 WaterLog.class},
-        version = 9,
+        version = 10,
         exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 
@@ -181,6 +181,14 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    /** Versão 9 -> 10: o registro de refeição feita ganhou "o que comi de verdade". */
+    static final Migration MIGRATION_9_10 = new Migration(9, 10) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase db) {
+            db.execSQL("ALTER TABLE `meal_logs` ADD COLUMN `eaten` TEXT NOT NULL DEFAULT ''");
+        }
+    };
+
     /**
      * Versão 8 -> 9: Trabalho ganhou tipo de demanda, dia inteiro / hora inicial e final, "adiada
      * de" e o status Cancelada (valor 3, sem coluna nova); as tags ganharam grupo de cor.
@@ -213,7 +221,7 @@ public abstract class AppDatabase extends RoomDatabase {
     static AppDatabase openForAccount(Context context, int accountId) {
         return Room.databaseBuilder(context.getApplicationContext(), AppDatabase.class,
                         AccountStore.databaseName(accountId))
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
                 .build();
     }
 
@@ -250,7 +258,7 @@ public abstract class AppDatabase extends RoomDatabase {
             if (instance == null || !name.equals(instanceName)) {
                 Builder<AppDatabase> builder = Room.databaseBuilder(context.getApplicationContext(),
                                 AppDatabase.class, name)
-                        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9);
+                        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10);
                 // Conta da nuvem: o banco é um espelho do Firestore; os hábitos sugeridos vão
                 // para a nuvem ao criar a conta (CloudSync), senão o espelho os apagaria
                 if (AccountStore.currentCloudUid(context) == null) builder.addCallback(SEED_CALLBACK);

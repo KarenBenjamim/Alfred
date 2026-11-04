@@ -261,6 +261,17 @@ public final class LegacyMigration {
             listOf(itemsOf, r.getLong("mealId")).add(it);
         }
         Map<Long, List<String>> mealDone = days(rows(t, "meal_logs"), "mealId");
+        Map<Long, Map<String, Object>> mealEaten = new HashMap<>();
+        for (JSONObject r : rows(t, "meal_logs")) {
+            String text = r.optString("eaten", "").trim();
+            if (text.isEmpty()) continue;
+            Map<String, Object> byDay = mealEaten.get(r.getLong("mealId"));
+            if (byDay == null) {
+                byDay = new HashMap<>();
+                mealEaten.put(r.getLong("mealId"), byDay);
+            }
+            byDay.put(CloudSchema.day(r.getLong("epochDay")), text);
+        }
         for (JSONObject r : rows(t, "meals")) {
             long old = r.getLong("id");
             Meal meal = new Meal();
@@ -273,6 +284,8 @@ public final class LegacyMigration {
             items.sort((a, b) -> Integer.compare(a.position, b.position));
             Map<String, Object> m = CloudSchema.meal(meal, items);
             putDays(m, CloudSchema.MEAL_DONE, mealDone.get(old));
+            Map<String, Object> eaten = mealEaten.get(old);
+            if (eaten != null && !eaten.isEmpty()) m.put(CloudSchema.MEAL_EATEN, eaten);
             out.add(new Write(CloudSchema.MEALS, CloudSchema.docId(meal.id), m, true));
             result.meals++;
         }

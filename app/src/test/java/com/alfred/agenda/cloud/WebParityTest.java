@@ -75,7 +75,14 @@ public class WebParityTest {
         String js = read("web/js/schema.js");
         // 4 avatares e 8 cores de tag/matéria: o clamp 0..7 da web e o Android precisam concordar
         assertEquals(4, count(js, "'img/"));
-        assertEquals(8, count(js.substring(js.indexOf("TAG_COLORS"), js.indexOf("STUDY_COLORS")), "', '#"));
+        int tags = js.indexOf("TAG_COLORS = [");
+        assertEquals(8, count(js.substring(tags, js.indexOf("];", tags)), "', '#"));
+        int study = js.indexOf("STUDY_COLORS = [");
+        assertEquals(8, count(js.substring(study, js.indexOf("];", study)), "', '#"));
+        // 5 grupos de tag do Trabalho, iguais a Tag.GROUP_COUNT
+        int groups = js.indexOf("WORK_GROUPS = [");
+        assertEquals(com.alfred.agenda.data.entity.Tag.GROUP_COUNT,
+                count(js.substring(groups, js.indexOf("];", groups)), "  ['"));
     }
 
     private static int count(String text, String needle) {

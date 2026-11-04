@@ -142,3 +142,12 @@ test('tags: grupo do Trabalho, tom automático e cor por tema', () => {
   assert.equal(S.tagColor(projeto, true), '#7FB0F2');  // azul aberto no escuro
   assert.equal(S.tagColor(projeto, false), '#1E5AA8'); // azul fechado no claro
 });
+
+test('readMeal: "comido" por dia e dia com texto conta como feito', () => {
+  const m = S.readMeal(5, { nome: 'Almoço', horario: '12:00', feitas: ['2026-11-03'],
+    comido: { '2026-11-04': 'Batata-doce no lugar do arroz', '2026-11-02': '  ', lixo: 'x' } });
+  assert.deepEqual(m.comido, { '2026-11-04': 'Batata-doce no lugar do arroz' });
+  assert.ok(m.feitas.includes('2026-11-04'));
+  assert.ok(m.feitas.includes('2026-11-03'));
+  assert.deepEqual(S.readMeal(6, { nome: 'Lanche' }).comido, {});
+});

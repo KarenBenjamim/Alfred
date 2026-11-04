@@ -30,7 +30,7 @@ import java.util.Map;
  *   usuarios/{uid}/tarefas/{id}        titulo, descricao, dia, prioridade, status, categoria, periodo, tags,
  *                                      tipo, diaInteiro, inicio, fim, adiadaDe (Trabalho)
  *   usuarios/{uid}/tags/{id}           nome, cor, grupo (-1 = Pessoal; 0..4 = grupo do Trabalho)
- *   usuarios/{uid}/refeicoes/{id}      nome, horario, avisar, observacoes, itens, feitas
+ *   usuarios/{uid}/refeicoes/{id}      nome, horario, avisar, observacoes, itens, feitas, comido
  *   usuarios/{uid}/plano/atual         plano importado da planilha
  *   usuarios/{uid}/habitos/{id}        nome, posicao, feitos
  *   usuarios/{uid}/agua/{dia}          ml
@@ -59,6 +59,8 @@ public final class CloudSchema {
 
     /** Campos que só mudam por operações atômicas (arrayUnion, increment): nunca vão no set(merge). */
     public static final String MEAL_DONE = "feitas";
+    /** {"2026-11-04": "o que foi comido de verdade"} (muda por chave, com merge). */
+    public static final String MEAL_EATEN = "comido";
     public static final String HABIT_DONE = "feitos";
     public static final String SUBJECT_TIME = "tempoPorDia";
     public static final String WATER_ML = "ml";
@@ -253,6 +255,20 @@ public final class CloudSchema {
             items.add(it);
         }
         return items;
+    }
+
+    /** "comido" -> {epochDay: texto}, só datas válidas e textos não vazios. */
+    public static Map<Long, String> mealEaten(Map<String, Object> m) {
+        Map<Long, String> out = new HashMap<>();
+        Object raw = m.get(MEAL_EATEN);
+        if (!(raw instanceof Map)) return out;
+        for (Map.Entry<?, ?> e : ((Map<?, ?>) raw).entrySet()) {
+            Long d = parseDay(e.getKey());
+            if (d != null && e.getValue() instanceof String && !((String) e.getValue()).trim().isEmpty()) {
+                out.put(d, (String) e.getValue());
+            }
+        }
+        return out;
     }
 
     // ===================== Hábitos =====================

@@ -5,7 +5,7 @@
 //   usuarios/{uid}/tarefas/{id}            titulo, descricao, dia, prioridade, status, categoria, periodo, tags,
 //                                          tipo, diaInteiro, inicio, fim, adiadaDe (Trabalho)
 //   usuarios/{uid}/tags/{id}               nome, cor, grupo (-1 = Pessoal; 0..4 = grupo do Trabalho)
-//   usuarios/{uid}/refeicoes/{id}          nome, horario, avisar, observacoes, itens, feitas
+//   usuarios/{uid}/refeicoes/{id}          nome, horario, avisar, observacoes, itens, feitas, comido
 //   usuarios/{uid}/plano/atual             plano importado da planilha (pelo app Android)
 //   usuarios/{uid}/habitos/{id}            nome, posicao, feitos
 //   usuarios/{uid}/agua/{dia}              ml
@@ -220,8 +220,17 @@ export function readMeal(id, d) {
   })) : [];
   return {
     id, nome: str(d.nome), minutos: parseTime(d.horario), avisar: bool(d.avisar, true),
-    observacoes: str(d.observacoes), itens, feitas: days(d.feitas),
+    observacoes: str(d.observacoes), itens,
+    // "comido" {dia: texto}; um dia com texto também conta como feito (igual ao Android)
+    comido: readEaten(d.comido),
+    feitas: [...new Set([...days(d.feitas), ...Object.keys(readEaten(d.comido))])],
   };
+}
+
+function readEaten(raw) {
+  const out = {};
+  if (raw && typeof raw === 'object') for (const [day, text] of Object.entries(raw)) if (parseDay(day) && typeof text === 'string' && text.trim()) out[day] = text;
+  return out;
 }
 
 export function readHabit(id, d) {

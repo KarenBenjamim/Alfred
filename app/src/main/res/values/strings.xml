@@ -340,7 +340,18 @@
     <string name="required_field">Receio que isto seja obrigatório, {voc}.</string>
     <string name="time_label">Horário: %1$s</string>
     <string name="due_label">Entrega: %1$s</string>
-    <string name="done_today">Feito hoje</string>
+    <string name="meal_done_a11y">%1$s feita hoje</string>
+    <string name="meal_expand">Abrir %1$s</string>
+    <string name="meal_collapse">Fechar %1$s</string>
+    <string name="meal_eaten_title">O que comi de verdade</string>
+    <string name="meal_eaten_add">Registrar o que comi</string>
+    <string name="meal_eaten_edit">Editar o que comi</string>
+    <string name="meal_eaten_none">Nada registrado hoje.</string>
+    <string name="meal_eaten_hint">Ex.: troquei o arroz por batata-doce</string>
+    <string name="meal_eaten_summary">Comi: %1$s</string>
+    <string name="meal_eaten_saved">Anotado, {voc}.</string>
+    <string name="meal_edit_plan">Editar refeição do plano</string>
+    <string name="diet_full_plan">Plano completo</string>
 
     <!-- Dieta -->
     <string name="meal_new">Nova refeição</string>

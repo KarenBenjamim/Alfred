@@ -262,6 +262,21 @@ public class AlfredRepository {
         setMealDone(mealId, epochDay, done, null);
     }
 
+    /** "O que comi de verdade" no dia: marca a refeição como feita e guarda o texto. */
+    public void setMealEaten(long mealId, long epochDay, String eaten, @Nullable Runnable onSuccess) {
+        String text = eaten.trim();
+        runWrite(() -> {
+            db.runInTransaction(() -> {
+                MealLog log = new MealLog();
+                log.mealId = mealId;
+                log.epochDay = epochDay;
+                mealDao.insertLog(log);
+                mealDao.setEaten(mealId, epochDay, text);
+            });
+            if (sync != null) sync.setMealEaten(mealId, epochDay, text);
+        }, onSuccess);
+    }
+
     /** @param onSuccess roda na thread principal SÓ se a gravação deu certo (pode ser null) */
     public void setMealDone(long mealId, long epochDay, boolean done, @Nullable Runnable onSuccess) {
         runWrite(() -> {
