@@ -66,3 +66,17 @@ test('documento com campos demais é recusado', async () => {
   for (let i = 0; i < 61; i++) grande['c' + i] = i;
   await assertFails(setDoc(doc(ana(), 'usuarios/ana/tarefas/1'), grande));
 });
+
+test('perfil com campos demais é recusado', async () => {
+  const grande = {};
+  for (let i = 0; i < 61; i++) grande['c' + i] = i;
+  await assertFails(setDoc(doc(ana(), 'usuarios/ana'), grande));
+});
+
+test('ids fora do formato do app são recusados', async () => {
+  await assertSucceeds(setDoc(doc(ana(), 'usuarios/ana/agua/2026-11-04'), { ml: 200 }));
+  await assertSucceeds(setDoc(doc(ana(), 'usuarios/ana/plano/atual'), { fonte: 'x' }));
+  await assertSucceeds(setDoc(doc(ana(), 'usuarios/ana/tarefas/9007199254740991'), { titulo: 'x' }));
+  await assertFails(setDoc(doc(ana(), 'usuarios/ana/tarefas/' + 'a'.repeat(25)), { titulo: 'x' }));
+  await assertFails(setDoc(doc(ana(), 'usuarios/ana/tarefas/um id'), { titulo: 'x' }));
+});

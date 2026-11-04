@@ -9,22 +9,31 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == uid;
     }
 
-    // Coleções previstas na estrutura aprovada (fase 1). Uma coleção nova precisa
-    // entrar nesta lista, o que evita gravar lixo em nomes arbitrários.
+    // Coleções previstas na estrutura do app. Uma coleção nova precisa entrar nesta
+    // lista, o que evita gravar lixo em nomes arbitrários.
     function isKnownCollection(col) {
       return col in ['tarefas', 'tags', 'refeicoes', 'plano', 'habitos', 'agua',
                      'estudos_materias', 'estudos_modulos', 'estudos_assuntos'];
     }
 
+    // No máximo 60 campos por documento: evita documentos inchados que gastam a cota gratuita
+    function isSmall() {
+      return request.resource.data.size() <= 60;
+    }
+
+    // Ids do app: números (tarefas, refeições...), "atual" (plano) ou a data (água, 2026-11-04)
+    function isValidId(docId) {
+      return docId.matches('^[0-9A-Za-z-]{1,24}$');
+    }
+
     // Perfil: nome, tratamento, peso, avatar, onboarding
     match /usuarios/{uid} {
-      allow read, write: if isOwner(uid);
+      allow read, delete: if isOwner(uid);
+      allow create, update: if isOwner(uid) && isSmall();
 
       match /{col}/{docId} {
         allow read, delete: if isOwner(uid) && isKnownCollection(col);
-        // No máximo 60 campos por documento: evita documentos inchados que gastam a cota gratuita
-        allow create, update: if isOwner(uid) && isKnownCollection(col)
-                              && request.resource.data.size() <= 60;
+        allow create, update: if isOwner(uid) && isKnownCollection(col) && isValidId(docId) && isSmall();
       }
     }
   }

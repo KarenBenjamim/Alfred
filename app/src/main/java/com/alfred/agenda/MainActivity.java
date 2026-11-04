@@ -4,6 +4,8 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
+import android.content.res.ColorStateList;
+import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -29,6 +31,7 @@ import androidx.fragment.app.Fragment;
 import com.alfred.agenda.account.AccountStore;
 import com.alfred.agenda.account.UserProfile;
 import com.alfred.agenda.cloud.CloudAuth;
+import com.alfred.agenda.cloud.CloudConfig;
 import com.alfred.agenda.data.AlfredRepository;
 import com.alfred.agenda.data.NutritionPlan;
 import com.alfred.agenda.data.entity.Task;
@@ -130,7 +133,7 @@ public class MainActivity extends AppCompatActivity {
         });
         // Ícones das barras do sistema escuros no tema claro e claros no escuro
         boolean night = (getResources().getConfiguration().uiMode
-                & android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+                & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
         WindowInsetsControllerCompat bars = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
         bars.setAppearanceLightStatusBars(!night);
         bars.setAppearanceLightNavigationBars(!night);
@@ -275,13 +278,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void logout() {
-        AlfredRepository.get(this).logout(() -> {
+        AlfredRepository.get(this).logout(() -> CloudConfig.clearOfflineCache(this, () -> {
             CloudAuth.signOut(this);
             clearSession();
             previousTab = TAB_TODAY;
             started = false;
             route(TAB_TODAY);
-        });
+        }));
     }
 
     /** Atualiza o que depende do perfil (avatar do cabeçalho; os textos usam o tratamento ao desenhar). */
@@ -325,9 +328,9 @@ public class MainActivity extends AppCompatActivity {
         currentTab = tab;
         headerSubtitle.setText(subtitleFor(tab));
         bottomNav.setSelectedTab(tab);
-        headerHome.setImageTintList(android.content.res.ColorStateList.valueOf(ContextCompat.getColor(this,
+        headerHome.setImageTintList(ColorStateList.valueOf(ContextCompat.getColor(this,
                 tab == TAB_TODAY ? R.color.highlight : R.color.text_secondary)));
-        headerAvatar.setStrokeColor(android.content.res.ColorStateList.valueOf(ContextCompat.getColor(this,
+        headerAvatar.setStrokeColor(ColorStateList.valueOf(ContextCompat.getColor(this,
                 tab == TAB_PROFILE || tab == TAB_SETTINGS ? R.color.highlight : R.color.outline)));
     }
 

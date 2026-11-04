@@ -4,6 +4,7 @@ import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.InputFilter;
 import android.text.InputType;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -91,7 +92,7 @@ public class LoginFragment extends Fragment {
             usernameLayout.setHint(R.string.auth_email);
             usernameLayout.setStartIconDrawable(R.drawable.ic_mail);
             username.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);
-            username.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(254)});
+            username.setFilters(new InputFilter[]{new InputFilter.LengthFilter(254)});
             username.setAutofillHints(View.AUTOFILL_HINT_EMAIL_ADDRESS);
             ((TextView) view.findViewById(R.id.login_note)).setText(CloudConfig.isUsingEmulator()
                     ? R.string.auth_emulator_note : R.string.auth_cloud_note);
@@ -134,7 +135,7 @@ public class LoginFragment extends Fragment {
     }
 
     private int minPassword() {
-        return cloud ? CloudAuth.MIN_PASSWORD : AccountStore.MIN_PASSWORD;
+        return AccountStore.MIN_PASSWORD;
     }
 
     private void applyMode() {

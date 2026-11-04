@@ -7,6 +7,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js';
 import {
   doc, collection, onSnapshot, setDoc, deleteDoc, deleteField, writeBatch, arrayUnion, arrayRemove, increment,
+  waitForPendingWrites, terminate, clearIndexedDbPersistence,
 } from 'https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js';
 import * as S from './schema.js';
 
@@ -66,6 +67,23 @@ const userRef = () => doc(db, S.COL.USERS, state.user.uid);
 const ref = (col, id) => doc(db, S.COL.USERS, state.user.uid, col, String(id));
 
 /** Gravação: aparece na hora (cache local) e vai para a nuvem quando houver internet. */
+/**
+ * Sair: espera até 5 s as gravações pendentes subirem e apaga a cópia offline (IndexedDB) deste
+ * navegador, para não deixar os dados da conta no computador. Sem internet, mantém o cache para
+ * não perder nada. Recarrega a página no fim (o Firestore encerrado não pode ser reaberto).
+ */
+async function logout() {
+  const sent = await Promise.race([waitForPendingWrites(db).then(() => true), new Promise((r) => setTimeout(() => r(false), 5000))]);
+  await signOut(auth).catch(() => {});
+  if (sent) {
+    try {
+      await terminate(db);
+      await clearIndexedDbPersistence(db);
+    } catch { /* outra aba aberta segura o cache: ele some quando todas fecharem */ }
+  }
+  location.reload();
+}
+
 function write(promise) {
   promise.catch((e) => {
     console.error(e);
@@ -241,7 +259,7 @@ function render() {
     content.replaceChildren(state.loadError
       ? h('div', { class: 'card' }, h('p', { class: 'error' }, state.loadError),
         h('div', { class: 'actions' },
-          h('button', { class: 'text', onclick: () => signOut(auth) }, 'Sair'),
+          h('button', { class: 'text', onclick: logout }, 'Sair'),
           h('button', { class: 'primary', onclick: () => location.reload() }, 'Tentar de novo')))
       : h('p', { class: 'empty' }, navigator.onLine ? 'Carregando seus dados…'
         : 'Sem internet. Seus dados aparecem assim que a conexão voltar.'));
@@ -989,7 +1007,7 @@ function renderProfile() {
         toast(voc('Anotado, {voc}.'));
       } }, 'Salvar'))),
     h('div', { class: 'card' }, h('h3', {}, 'Aparência'), theme),
-    h('div', { class: 'actions' }, h('button', { class: 'secondary danger', onclick: () => signOut(auth) }, 'Sair da conta')));
+    h('div', { class: 'actions' }, h('button', { class: 'secondary danger', onclick: logout }, 'Sair da conta')));
 }
 
 function setTheme(value) {

@@ -16,7 +16,10 @@ import javax.crypto.spec.PBEKeySpec;
  */
 public final class PasswordHasher {
 
-    static final int ITERATIONS = 100_000;
+    /** Contas novas e senhas refeitas no login (recomendação OWASP para PBKDF2-HMAC-SHA256). */
+    static final int ITERATIONS = 600_000;
+    /** Contas antigas gravadas sem o número de iterações. */
+    static final int LEGACY_ITERATIONS = 100_000;
     private static final int SALT_BYTES = 16;
     private static final int HASH_BITS = 256;
     private static final SecureRandom RANDOM = new SecureRandom();

@@ -20,6 +20,15 @@ android {
         versionName = '1.1'
     }
 
+    buildTypes {
+        release {
+            // R8: remove código e recursos não usados e ofusca os nomes (APK menor e menos legível)
+            minifyEnabled = true
+            shrinkResources = true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

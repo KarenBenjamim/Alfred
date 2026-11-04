@@ -32,7 +32,7 @@ public final class AccountStore {
     private static final String KEY_CURRENT = "current_user";
 
     private static final Pattern USERNAME = Pattern.compile("[A-Za-z0-9._-]{3,30}");
-    public static final int MIN_PASSWORD = 4;
+    public static final int MIN_PASSWORD = 8;
     public static final int MAX_PASSWORD = 64;
 
     /** Erro de cadastro/login com a mensagem que a tela deve mostrar. */
@@ -99,12 +99,20 @@ public final class AccountStore {
         int id = p.getInt(indexKey(username.trim()), 0);
         String salt = p.getString("user_" + id + "_salt", null);
         String hash = p.getString("user_" + id + "_hash", null);
-        int iterations = p.getInt("user_" + id + "_iter", PasswordHasher.ITERATIONS);
+        int iterations = p.getInt("user_" + id + "_iter", PasswordHasher.LEGACY_ITERATIONS);
         // Mesma mensagem para usuário inexistente e senha errada (não revela quais contas existem)
         if (id == 0 || salt == null || hash == null || !PasswordHasher.matches(password, salt, hash, iterations)) {
             throw new AccountException(R.string.auth_error_wrong);
         }
-        p.edit().putInt(KEY_CURRENT, id).apply(); // apply já vale na memória; o disco grava em seguida
+        SharedPreferences.Editor edit = p.edit().putInt(KEY_CURRENT, id);
+        if (iterations < PasswordHasher.ITERATIONS) {
+            // Senha certa numa conta antiga: refaz o hash com o custo atual
+            String newSalt = PasswordHasher.newSalt();
+            edit.putString("user_" + id + "_salt", newSalt)
+                    .putString("user_" + id + "_hash", PasswordHasher.hash(password, newSalt))
+                    .putInt("user_" + id + "_iter", PasswordHasher.ITERATIONS);
+        }
+        edit.apply(); // apply já vale na memória; o disco grava em seguida
         return id;
     }
 
@@ -219,7 +227,7 @@ public final class AccountStore {
         SharedPreferences p = prefs(ctx);
         String salt = p.getString("user_" + id + "_salt", null);
         String hash = p.getString("user_" + id + "_hash", null);
-        int iterations = p.getInt("user_" + id + "_iter", PasswordHasher.ITERATIONS);
+        int iterations = p.getInt("user_" + id + "_iter", PasswordHasher.LEGACY_ITERATIONS);
         return salt != null && hash != null && PasswordHasher.matches(password, salt, hash, iterations);
     }
 

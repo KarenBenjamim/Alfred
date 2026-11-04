@@ -21,6 +21,7 @@ import androidx.credentials.exceptions.GetCredentialException;
 import androidx.credentials.exceptions.NoCredentialException;
 
 import com.alfred.agenda.R;
+import com.alfred.agenda.account.AccountStore;
 import com.alfred.agenda.util.AppLog;
 import com.google.android.gms.tasks.Task;
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption;
@@ -38,10 +39,6 @@ import com.google.firebase.auth.GoogleAuthProvider;
  * Os resultados voltam na thread principal. Mensagens de erro já em português.
  */
 public final class CloudAuth {
-
-    /** Senha mínima das contas na nuvem (o Firebase exige 6; usamos 8). */
-    public static final int MIN_PASSWORD = 8;
-    public static final int MAX_PASSWORD = 64;
 
     /** Resultado de uma operação: errorRes = 0 deu certo; cancelled = a usuária desistiu. */
     public interface Callback {
@@ -66,8 +63,8 @@ public final class CloudAuth {
 
     @StringRes
     public static int validatePassword(String password) {
-        return password.length() >= MIN_PASSWORD && password.length() <= MAX_PASSWORD
-                ? 0 : R.string.auth_error_cloud_password;
+        // Mesmo tamanho das contas locais (o Firebase exige 6; usamos 8)
+        return AccountStore.validatePassword(password) == 0 ? 0 : R.string.auth_error_cloud_password;
     }
 
     /** Código de erro do Firebase Auth -> mensagem para a tela. */

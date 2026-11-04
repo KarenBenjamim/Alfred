@@ -130,7 +130,7 @@ Ao abrir o Alfred pela primeira vez:
 
 ## Planilha da dieta
 
-O plano não vem mais embutido no app: cada conta importa a sua planilha na aba **Dieta** (ou em *Configurações → Importar planilha da dieta*). O formato é o do template (`app/src/main/assets/plano_alimentar_template.xlsx`, cópia de `doc/template/`):
+O plano não vem mais embutido no app: cada conta importa a sua planilha na aba **Dieta** (ou em *Configurações → Importar planilha da dieta*). O formato é o do template (`app/src/main/assets/plano_alimentar_template.xlsx`, o mesmo que o app oferece para baixar):
 
 - abas lidas pelo **nome**: "Plano Alimentar", "Água", "Lista de Substituição" e "Observações" (a aba "Instruções" é ignorada);
 - cabeçalhos na **linha 4**, dados a partir da **linha 5**;
@@ -195,6 +195,21 @@ firebase emulators:start --only auth,firestore,hosting --project demo-alfred
 
 - **Backup:** *Configurações → Exportar backup dos dados* salva um `.json` com tudo da conta (sem criptografia; guarde em lugar seguro).
 - **Migração (uma vez):** depois de entrar com a conta da nuvem, *Configurações → Trazer dados de uma conta antiga* pede a senha da conta local antiga, oferece salvar o backup dela antes e envia tudo para a nuvem. Repetir depois de uma falha não duplica nada, e os dados locais antigos não são apagados.
+- **Importar backup:** *Configurações → Importar backup (.json)* envia um backup exportado antes para a conta da nuvem; importar o mesmo arquivo de novo não duplica nada.
+
+### Segurança
+
+- **Na nuvem:** as regras (`firestore.rules`) deixam cada conta ler e gravar só `usuarios/{uid}`, nas coleções conhecidas, com ids no formato do app e no máximo 60 campos por documento. A comunicação é sempre por HTTPS (TLS).
+- **No celular:**
+  - perfil e plano ficam cifrados com AES-256-GCM, com a chave no Android Keystore;
+  - o backup automático do Android está desligado;
+  - senhas de contas locais usam PBKDF2-HMAC-SHA256 com 600 mil iterações e sal aleatório, e as contas antigas são refeitas no próximo login.
+- **Ao sair:** o app e o site apagam a cópia offline do Firestore no aparelho, depois que as gravações pendentes sobem. Sem internet, a cópia fica para não perder dados.
+- **Versão final (release):** é compilada com R8, que remove o código e os recursos não usados. Os logs ficam desligados.
+- **Site:**
+  - a interface só usa `textContent`, nunca `innerHTML`;
+  - a CSP bloqueia scripts de fora do Firebase;
+  - os cabeçalhos de `firebase.json` impedem o site de ser aberto dentro de outro (anti-clickjacking).
 
 ---
 

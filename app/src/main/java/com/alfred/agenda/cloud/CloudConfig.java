@@ -6,10 +6,13 @@ import android.content.pm.ApplicationInfo;
 import androidx.annotation.Nullable;
 
 import com.alfred.agenda.util.AppLog;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * Decide a qual Firebase o app se conecta:
@@ -56,6 +59,32 @@ public final class CloudConfig {
         } catch (RuntimeException e) {
             AppLog.e("Firebase indisponível; o app segue só com os dados locais", e);
         }
+    }
+
+    /**
+     * Ao sair da conta: apaga a cópia offline do Firestore neste aparelho, para não deixar os
+     * dados da conta anterior no disco. Espera até 5 s as gravações pendentes subirem; se não
+     * subirem (sem internet), mantém o cache para não perder nada. done roda na thread principal.
+     */
+    public static void clearOfflineCache(Context ctx, Runnable done) {
+        if (!isAvailable(ctx)) {
+            done.run();
+            return;
+        }
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        Tasks.withTimeout(db.waitForPendingWrites(), 5, TimeUnit.SECONDS)
+                .continueWithTask(sent -> {
+                    if (!sent.isSuccessful()) return Tasks.forResult(false);
+                    return db.terminate().continueWithTask(t -> db.clearPersistence())
+                            .continueWith(t -> true);
+                })
+                .addOnCompleteListener(t -> {
+                    // Instância nova depois do terminate: volta a apontar para o emulador
+                    if (usingEmulator && Boolean.TRUE.equals(t.getResult())) {
+                        FirebaseFirestore.getInstance().useEmulator(EMULATOR_HOST, FIRESTORE_PORT);
+                    }
+                    done.run();
+                });
     }
 
     /** Há um Firebase configurado (real ou emulador)? */
