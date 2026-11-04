@@ -227,23 +227,35 @@ export function readMeal(id, d) {
   };
 }
 
-/** "Lanche - Opção 2" -> "Lanche" (igual ao MealGroups do Android). */
+/** "Opção 2", "opcao 2", "Op. 2" no fim do nome (mesma regra do MealGroups do Android). */
+const OPTION_SUFFIX = /\s*[-–—:(]?\s*(?<!\p{L})(op(?:ç|c)?(?:ão|ao)?\.?)\s*(\d+)\s*\)?\s*$/iu;
+
+function optionMatch(name) {
+  const m = OPTION_SUFFIX.exec(name);
+  return m && m.index > 0 ? m : null;
+}
+
+/** "Lanche - Opção 2" -> "Lanche". */
 export function mealBaseName(name) {
-  return name.replace(/\s*[-–]\s*Opção\s*\d+\s*$/u, '');
+  const m = optionMatch(name);
+  return m ? name.slice(0, m.index).trim() : name;
 }
 
 /** "Lanche - Opção 2" -> "Opção 2" (ou o nome inteiro). */
 export function mealOptionLabel(name) {
-  const m = name.match(/Opção\s*\d+/u);
-  return m ? m[0] : name;
+  const m = optionMatch(name);
+  return m ? `Opção ${m[2]}` : name;
 }
 
-/** Junta as opções do mesmo horário e nome-base num grupo só, na ordem recebida. */
+/**
+ * Junta as opções de uma refeição ("Lanche - Opção 1/2") num grupo só, mesmo em horários
+ * diferentes; refeições sem "Opção N" ficam sozinhas. O grupo fica no horário da 1ª opção.
+ */
 export function groupMeals(meals) {
   const map = new Map();
   for (const m of meals) {
     const name = mealBaseName(m.nome);
-    const key = `${m.minutos}|${name}`;
+    const key = optionMatch(m.nome) ? `o|${name.toLowerCase()}` : `m|${m.id}`;
     if (!map.has(key)) map.set(key, { name, minutos: m.minutos, options: [] });
     map.get(key).options.push(m);
   }

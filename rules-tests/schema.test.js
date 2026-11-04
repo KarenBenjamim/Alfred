@@ -158,4 +158,9 @@ test('opções do mesmo horário viram uma refeição só (igual ao MealGroups d
   assert.deepEqual(g.map((x) => [x.name, x.options.length]), [['Lanche', 2], ['Jantar', 1], ['Almoço', 1]]);
   assert.equal(S.mealOptionLabel('Lanche - Opção 2'), 'Opção 2');
   assert.equal(S.mealBaseName('Almoço'), 'Almoço');
+  assert.equal(S.mealBaseName('Café da manhã (opção 3)'), 'Café da manhã');
+  assert.equal(S.mealOptionLabel('Jantar opcao 1'), 'Opção 1');
+  assert.equal(S.mealBaseName('Workshop 2'), 'Workshop 2');
+  const all = S.groupMeals([m(1, 'Café - Opção 1', 420), m(2, 'Café - Opção 2', 450), m(3, 'Jantar', 1200), m(4, 'Jantar', 1260), m(5, 'lanche – opcao 2', 960), m(6, 'Lanche - Op. 1', 960)]);
+  assert.deepEqual(all.map((x) => x.options.length), [2, 1, 1, 2]);
 });

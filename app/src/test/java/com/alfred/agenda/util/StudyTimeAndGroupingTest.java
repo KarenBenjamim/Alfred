@@ -2,6 +2,8 @@ package com.alfred.agenda.util;
 
 import static org.junit.Assert.assertEquals;
 
+import com.alfred.agenda.data.entity.Meal;
+import com.alfred.agenda.data.entity.MealWithItems;
 import com.alfred.agenda.data.entity.Task;
 
 import org.junit.Test;
@@ -41,6 +43,41 @@ public class StudyTimeAndGroupingTest {
         assertEquals("Lanche", MealGroups.baseName("Lanche - Opção 2"));
         assertEquals("Opção 2", MealGroups.optionLabel("Lanche - Opção 2"));
         assertEquals("Almoço", MealGroups.baseName("Almoço"));
+        // Outras grafias da planilha
+        assertEquals("Café da manhã", MealGroups.baseName("Café da manhã (opção 3)"));
+        assertEquals("Opção 3", MealGroups.optionLabel("Café da manhã (opção 3)"));
+        assertEquals("Jantar", MealGroups.baseName("Jantar opcao 1"));
+        assertEquals("Ceia", MealGroups.baseName("Ceia: Op. 2"));
+        // "op" dentro de uma palavra não é opção
+        assertEquals("Workshop 2", MealGroups.baseName("Workshop 2"));
+        assertEquals("Opção 1", MealGroups.baseName("Opção 1"));
+    }
+
+    @Test
+    public void todasAsOpcoesDeUmaRefeicaoViramUmGrupo() {
+        List<MealGroups.Group> g = MealGroups.group(Arrays.asList(
+                meal(1, "Café da manhã - Opção 1", 420),
+                meal(2, "Café da manhã - Opção 2", 450),   // horário diferente: mesmo grupo
+                meal(3, "Almoço", 720),
+                meal(4, "Lanche - Opção 1", 960),
+                meal(5, "lanche – opcao 2", 960),
+                meal(6, "Jantar", 1200),
+                meal(7, "Jantar", 1260)));                // sem opção: ficam separadas
+        assertEquals(5, g.size());
+        assertEquals("Café da manhã", g.get(0).name);
+        assertEquals(420, g.get(0).timeMinutes);
+        assertEquals(2, g.get(0).options.size());
+        assertEquals(2, g.get(2).options.size());
+        assertEquals(1, g.get(3).options.size());
+    }
+
+    private static MealWithItems meal(long id, String name, int minutes) {
+        MealWithItems m = new MealWithItems();
+        m.meal = new Meal();
+        m.meal.id = id;
+        m.meal.name = name;
+        m.meal.timeMinutes = minutes;
+        return m;
     }
 
     private static Task task(long id, long day, boolean done) {
